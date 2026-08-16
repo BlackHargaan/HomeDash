@@ -20,8 +20,18 @@ function blankEvent(day) {
   return {
     id: uid('evt'), uid: uid('uid'), title: '', description: '', location: '',
     start: start.toISOString(), end: end.toISOString(), allDay: false, color: 'indigo', source: 'local',
+    reminderMinutes: 10,
   }
 }
+
+const REMINDER_OPTIONS = [
+  { value: '', label: 'No reminder' },
+  { value: '0', label: 'At start time' },
+  { value: '5', label: '5 minutes before' },
+  { value: '10', label: '10 minutes before' },
+  { value: '30', label: '30 minutes before' },
+  { value: '60', label: '1 hour before' },
+]
 
 export default function CalendarWidget() {
   const { events, setEvents, tasks } = useDashboard()
@@ -325,6 +335,7 @@ function EventEditor({ event, onClose, onSave, onDelete }) {
     startLocal: fmtDateTimeLocal(event.start),
     endLocal: event.end ? fmtDateTimeLocal(event.end) : fmtDateTimeLocal(new Date(new Date(event.start).getTime() + 3600000)),
     repeat: event.recurrence?.freq || 'none',
+    reminder: typeof event.reminderMinutes === 'number' ? String(event.reminderMinutes) : '',
   })
   const isNew = !event.title
   const richRule = event.recurrence && (event.recurrence.byday?.length || event.recurrence.count || event.recurrence.until || event.recurrence.interval > 1)
@@ -351,6 +362,7 @@ function EventEditor({ event, onClose, onSave, onDelete }) {
       end: (end > start ? end : new Date(start.getTime() + 3600000)).toISOString(),
       allDay: form.allDay, color: form.color, source: form.source || 'local',
       recurrence, exdates: form.exdates || [],
+      reminderMinutes: form.allDay || form.reminder === '' ? null : Number(form.reminder),
     })
   }
 
@@ -395,6 +407,14 @@ function EventEditor({ event, onClose, onSave, onDelete }) {
           <label>Notes</label>
           <textarea className="input" value={form.description} onChange={(e) => set({ description: e.target.value })} placeholder="Optional" />
         </div>
+        {!form.allDay && (
+          <div className="field">
+            <label>Remind me</label>
+            <select className="select" value={form.reminder} onChange={(e) => set({ reminder: e.target.value })}>
+              {REMINDER_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </div>
+        )}
         <div className="field">
           <label>Repeat</label>
           <select className="select" value={form.repeat} onChange={(e) => set({ repeat: e.target.value })} disabled={richRule}>

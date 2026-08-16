@@ -5,6 +5,7 @@ import BoardTabs from './components/BoardTabs.jsx'
 import AddWidgetModal from './components/AddWidgetModal.jsx'
 import SettingsModal from './components/SettingsModal.jsx'
 import CommandPalette from './components/CommandPalette.jsx'
+import Reminders from './components/Reminders.jsx'
 
 export default function App() {
   const { editMode, setEditMode } = useDashboard()
@@ -25,6 +26,7 @@ export default function App() {
 
   return (
     <>
+      <Reminders />
       <div className="wallpaper" />
       <div className="app">
         <header className="topbar">

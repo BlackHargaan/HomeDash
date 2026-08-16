@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useDashboard } from '../context/DashboardContext.jsx'
 import { uid } from '../lib/storage.js'
+import { parseNaturalEvent } from '../lib/nlp.js'
 
 // ⌘K / Ctrl-K launcher: fuzzy-filter a list of actions, or drop into a small
 // input sub-mode for "New task" / "New board".
@@ -20,6 +21,16 @@ export default function CommandPalette({ onClose, onAddWidget, onSettings }) {
         run: () => setMode({
           kind: 'task', label: 'New task', placeholder: 'What needs doing?',
           run: (val) => { dash.setTasks((t) => [...t, { id: uid('t'), title: val, done: false, due: null, priority: 'med', createdAt: Date.now() }]); onClose() },
+        }),
+      },
+      {
+        id: 'new-event', icon: '📅', label: 'New event', hint: 'e.g. “Lunch tomorrow 1pm”',
+        run: () => setMode({
+          kind: 'event', label: 'New event', placeholder: 'e.g. “Standup Monday 9:30am”',
+          run: (val) => {
+            const ev = parseNaturalEvent(val)
+            if (ev && ev.start) { dash.setEvents((e) => [...e, ev]); onClose() }
+          },
         }),
       },
       {

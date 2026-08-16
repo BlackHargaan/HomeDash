@@ -37,6 +37,7 @@ export default function WeatherWidget({ widget }) {
     const tempUnit = unit === 'f' ? 'fahrenheit' : 'celsius'
     const url = `${FORECAST}?latitude=${cfg.place.lat}&longitude=${cfg.place.lon}` +
       `&current=temperature_2m,weather_code,apparent_temperature,relative_humidity_2m,wind_speed_10m` +
+      `&hourly=temperature_2m,weather_code` +
       `&daily=weather_code,temperature_2m_max,temperature_2m_min&forecast_days=4&timezone=auto` +
       `&temperature_unit=${tempUnit}`
     fetch(url)
@@ -145,6 +146,27 @@ export default function WeatherWidget({ widget }) {
         </div>
       )}
       {status === 'error' && <div className="faint">Couldn’t load weather.</div>}
+      {data?.hourly && (
+        <div className="weather-hourly">
+          {(() => {
+            const times = data.hourly.time
+            let idx = times.findIndex((t) => new Date(t) >= new Date())
+            if (idx < 0) idx = 0
+            return times.slice(idx, idx + 8).map((t, i) => {
+              const h = idx + i
+              const [, hEmoji] = WMO[data.hourly.weather_code[h]] || ['', '🌡️']
+              const label = i === 0 ? 'Now' : new Date(t).toLocaleTimeString(undefined, { hour: 'numeric' })
+              return (
+                <div key={t} className="wh-cell">
+                  <span className="wh-time faint">{label}</span>
+                  <span className="wh-emoji">{hEmoji}</span>
+                  <span className="wh-temp">{Math.round(data.hourly.temperature_2m[h])}°</span>
+                </div>
+              )
+            })
+          })()}
+        </div>
+      )}
       {data?.daily && (
         <div className="weather-forecast">
           {data.daily.time.slice(1, 4).map((t, i) => {

@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { useDashboard } from '../context/DashboardContext.jsx'
 import { ACCENTS } from '../widgets/registry.js'
 import { exportAllData, importAllData } from '../lib/storage.js'
+import { requestNotifyPermission, notifyPermission, notifySupported } from '../lib/notify.js'
 import Modal from './Modal.jsx'
 
 const WALLPAPERS = [
@@ -14,10 +15,16 @@ const WALLPAPERS = [
 export default function SettingsModal({ onClose }) {
   const {
     theme, setTheme, accent, setAccent, wallpaper, setWallpaper,
-    userName, setUserName, resetBoard,
+    userName, setUserName, resetBoard, notifyEnabled, setNotifyEnabled,
   } = useDashboard()
   const fileRef = useRef(null)
   const [restoreMsg, setRestoreMsg] = useState(null)
+
+  async function toggleNotify() {
+    if (notifyEnabled) { setNotifyEnabled(false); return }
+    const perm = await requestNotifyPermission()
+    setNotifyEnabled(perm === 'granted')
+  }
 
   function backup() {
     const blob = new Blob([JSON.stringify(exportAllData(), null, 2)], { type: 'application/json' })
@@ -89,6 +96,23 @@ export default function SettingsModal({ onClose }) {
             </button>
           ))}
         </div>
+      </div>
+
+      <div className="field">
+        <label>Notifications</label>
+        {notifySupported() ? (
+          <>
+            <button className={`chip ${notifyEnabled ? 'on' : ''}`} onClick={toggleNotify} style={{ alignSelf: 'flex-start' }}>
+              {notifyEnabled ? '🔔 Reminders on' : '🔕 Enable reminders'}
+            </button>
+            <span className="faint" style={{ fontSize: 12 }}>
+              Get a browser alert before timed events and when tasks are due today.
+              {notifyPermission() === 'denied' && ' Notifications are blocked in your browser settings.'}
+            </span>
+          </>
+        ) : (
+          <span className="faint" style={{ fontSize: 12 }}>This browser doesn’t support notifications.</span>
+        )}
       </div>
 
       <div className="field" style={{ marginTop: 20, borderTop: '1px solid var(--line)', paddingTop: 16 }}>

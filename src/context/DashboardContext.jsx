@@ -48,6 +48,7 @@ export function DashboardProvider({ children }) {
   const [accent, setAccent] = usePersistentState('accent', 'indigo')
   const [wallpaper, setWallpaper] = usePersistentState('wallpaper', 'aurora')
   const [userName, setUserName] = usePersistentState('userName', '')
+  const [notifyEnabled, setNotifyEnabled] = usePersistentState('notify', false)
   const [editMode, setEditMode] = useState(false)
 
   // Multiple boards. Widgets for every board live in one object keyed by board id.
@@ -171,6 +172,7 @@ export function DashboardProvider({ children }) {
     accent, setAccent,
     wallpaper, setWallpaper,
     userName, setUserName,
+    notifyEnabled, setNotifyEnabled,
     widgets, setWidgets,
     editMode, setEditMode,
     addWidget, removeWidget, updateWidget, applyLayout, resetBoard,
