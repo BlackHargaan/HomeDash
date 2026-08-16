@@ -60,6 +60,25 @@ export const WIDGET_TYPES = {
     description: 'At-a-glance productivity tiles.',
     layout: { w: 3, h: 4, minW: 2, minH: 3 },
   },
+  today: {
+    name: 'Today',
+    icon: '☀️',
+    description: "Your next event, top tasks and habits due — today at a glance.",
+    layout: { w: 4, h: 6, minW: 3, minH: 4 },
+    singleton: true,
+  },
+  countdown: {
+    name: 'Countdown',
+    icon: '⏳',
+    description: 'Count down (or up) to any date — trips, launches, birthdays.',
+    layout: { w: 3, h: 3, minW: 2, minH: 2 },
+  },
+  worldclock: {
+    name: 'World Clocks',
+    icon: '🌍',
+    description: 'Live time across multiple cities and time zones.',
+    layout: { w: 3, h: 5, minW: 2, minH: 3 },
+  },
   embed: {
     name: 'Custom Embed',
     icon: '🧩',

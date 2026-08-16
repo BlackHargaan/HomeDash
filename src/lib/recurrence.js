@@ -107,6 +107,17 @@ export function expandInRange(event, rangeStart, rangeEnd) {
   return out
 }
 
+// Expand a whole event list within [start, end] and return occurrences sorted
+// chronologically. Shared by the Agenda view and the Today panel.
+export function collectOccurrences(events, start, end) {
+  const out = []
+  for (const e of events) {
+    if (!e.start) continue
+    for (const inst of expandInRange(e, start, end)) out.push(inst)
+  }
+  return out.sort((a, b) => new Date(a.start) - new Date(b.start))
+}
+
 // Human-readable summary for the event editor, e.g. "Repeats weekly".
 export function describeRecurrence(rec) {
   if (!rec || !rec.freq) return ''

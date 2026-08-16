@@ -1,5 +1,7 @@
+import { useRef, useState } from 'react'
 import { useDashboard } from '../context/DashboardContext.jsx'
 import { ACCENTS } from '../widgets/registry.js'
+import { exportAllData, importAllData } from '../lib/storage.js'
 import Modal from './Modal.jsx'
 
 const WALLPAPERS = [
@@ -14,6 +16,35 @@ export default function SettingsModal({ onClose }) {
     theme, setTheme, accent, setAccent, wallpaper, setWallpaper,
     userName, setUserName, resetBoard,
   } = useDashboard()
+  const fileRef = useRef(null)
+  const [restoreMsg, setRestoreMsg] = useState(null)
+
+  function backup() {
+    const blob = new Blob([JSON.stringify(exportAllData(), null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `homedash-backup-${new Date().toISOString().slice(0, 10)}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  function restore(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      try {
+        importAllData(JSON.parse(String(reader.result)))
+        setRestoreMsg('ok')
+        setTimeout(() => window.location.reload(), 700)
+      } catch {
+        setRestoreMsg('error')
+      }
+    }
+    reader.readAsText(file)
+    e.target.value = ''
+  }
 
   return (
     <Modal
@@ -58,6 +89,20 @@ export default function SettingsModal({ onClose }) {
             </button>
           ))}
         </div>
+      </div>
+
+      <div className="field" style={{ marginTop: 20, borderTop: '1px solid var(--line)', paddingTop: 16 }}>
+        <label>Backup &amp; restore</label>
+        <p className="faint" style={{ fontSize: 12, margin: '0 0 8px' }}>
+          Everything lives in this browser. Export a JSON backup to move HomeDash to another browser or keep it safe.
+        </p>
+        <div className="row">
+          <button className="btn" onClick={backup}>⇧ Export backup</button>
+          <button className="btn" onClick={() => fileRef.current?.click()}>⇩ Restore…</button>
+          <input ref={fileRef} type="file" accept="application/json,.json" hidden onChange={restore} />
+        </div>
+        {restoreMsg === 'ok' && <span className="ok-msg">✓ Restored — reloading…</span>}
+        {restoreMsg === 'error' && <span className="err-msg">That doesn’t look like a HomeDash backup.</span>}
       </div>
 
       <div className="field" style={{ marginTop: 20, borderTop: '1px solid var(--line)', paddingTop: 16 }}>

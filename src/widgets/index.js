@@ -11,6 +11,9 @@ import PomodoroWidget from './PomodoroWidget.jsx'
 import StatsWidget from './StatsWidget.jsx'
 import EmbedWidget from './EmbedWidget.jsx'
 import IframeStatWidget from './IframeStatWidget.jsx'
+import TodayWidget from './TodayWidget.jsx'
+import CountdownWidget from './CountdownWidget.jsx'
+import WorldClockWidget from './WorldClockWidget.jsx'
 
 export const WIDGET_COMPONENTS = {
   clock: ClockWidget,
@@ -24,4 +27,7 @@ export const WIDGET_COMPONENTS = {
   stats: StatsWidget,
   embed: EmbedWidget,
   iframeStat: IframeStatWidget,
+  today: TodayWidget,
+  countdown: CountdownWidget,
+  worldclock: WorldClockWidget,
 }

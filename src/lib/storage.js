@@ -48,6 +48,29 @@ export function useWidgetState(widgetId, initial) {
   return usePersistentState(`widget:${widgetId}`, initial)
 }
 
+// Snapshot every HomeDash key into a plain object (for JSON backup).
+export function exportAllData() {
+  const data = {}
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i)
+    if (k && k.startsWith(PREFIX)) {
+      try { data[k.slice(PREFIX.length)] = JSON.parse(localStorage.getItem(k)) } catch { /* skip */ }
+    }
+  }
+  return { version: 1, exportedAt: new Date().toISOString(), data }
+}
+
+// Restore a backup produced by exportAllData(). Replaces all HomeDash keys.
+export function importAllData(payload) {
+  const data = payload?.data
+  if (!data || typeof data !== 'object') throw new Error('Invalid backup file')
+  for (let i = localStorage.length - 1; i >= 0; i--) {
+    const k = localStorage.key(i)
+    if (k && k.startsWith(PREFIX)) localStorage.removeItem(k)
+  }
+  for (const [k, v] of Object.entries(data)) writeStore(k, v)
+}
+
 export function uid(prefix = 'id') {
   return `${prefix}_${Math.random().toString(36).slice(2, 9)}${Date.now().toString(36).slice(-4)}`
 }
