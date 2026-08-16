@@ -93,7 +93,9 @@ export function parseICS(text) {
         break
     }
   }
-  return events.filter((e) => e.start instanceof Date && !isNaN(e.start))
+  // finalizeEvent stores `start` as an ISO string, so validate the string form
+  // (an invalid/absent DTSTART yields a null start we want to drop).
+  return events.filter((e) => e.start && !isNaN(new Date(e.start).getTime()))
 }
 
 function finalizeEvent(cur) {
