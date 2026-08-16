@@ -73,6 +73,36 @@ npm run preview  # preview the production build
 
 Requires Node 18+.
 
+## Self-hosting with Docker
+
+HomeDash builds to static files, so the image is a tiny nginx container (no
+Node at runtime). Data lives in each visitor's browser — the container is
+stateless, so there are no volumes to manage.
+
+**Docker Compose** (recommended):
+
+```bash
+docker compose up -d --build
+```
+
+Then open **http://localhost:8080**. Change the host port by editing the
+`ports` mapping in `docker-compose.yml` (e.g. `- "3000:80"`).
+
+**Plain Docker:**
+
+```bash
+docker build -t homedash .
+docker run -d --name homedash -p 8080:80 --restart unless-stopped homedash
+```
+
+The image is a multi-stage build (`node:20-alpine` to build → `nginx:alpine`
+to serve) with gzip, long-lived caching for hashed assets, an SPA fallback and
+a container healthcheck. Put it behind your reverse proxy (Traefik, Caddy,
+nginx-proxy, etc.) for TLS and a hostname, just like Homarr/homepage.
+
+> Weather and (optional) cloud sync are called from the browser, so the
+> container itself needs no API keys or outbound configuration.
+
 ## Architecture
 
 ```
