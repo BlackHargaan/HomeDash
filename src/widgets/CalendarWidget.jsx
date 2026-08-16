@@ -2,12 +2,16 @@ import { useMemo, useRef, useState } from 'react'
 import { useDashboard } from '../context/DashboardContext.jsx'
 import { uid } from '../lib/storage.js'
 import { parseICS, eventsToICS } from '../lib/ics.js'
+import { expandInRange, describeRecurrence, SIMPLE_FREQS } from '../lib/recurrence.js'
 import { EVENT_COLORS, ACCENTS } from './registry.js'
 import Modal from '../components/Modal.jsx'
 import {
   monthMatrix, weekDays, isSameDay, toDateKey, fromDateKey,
   fmtMonthYear, fmtTime, fmtDateTimeLocal, WEEKDAY_SHORT,
 } from '../lib/date.js'
+
+function startOf(d) { const x = new Date(d); x.setHours(0, 0, 0, 0); return x }
+function endOf(d) { const x = new Date(d); x.setHours(23, 59, 59, 999); return x }
 
 function blankEvent(day) {
   const start = new Date(day)
@@ -27,13 +31,26 @@ export default function CalendarWidget() {
   const [showImport, setShowImport] = useState(false)
   const fileRef = useRef(null)
 
-  // Index events + due-dated tasks by day key.
+  // The span of days currently on screen — recurring events are expanded only
+  // within this window.
+  const range = useMemo(() => {
+    if (view === 'week') {
+      const days = weekDays(cursor)
+      return { start: startOf(days[0]), end: endOf(days[6]) }
+    }
+    const weeks = monthMatrix(cursor.getFullYear(), cursor.getMonth())
+    return { start: startOf(weeks[0][0]), end: endOf(weeks[5][6]) }
+  }, [cursor, view])
+
+  // Index events (expanding recurrences) + due-dated tasks by day key.
   const byDay = useMemo(() => {
     const map = {}
     for (const e of events) {
       if (!e.start) continue
-      const key = toDateKey(new Date(e.start))
-      ;(map[key] ||= []).push({ ...e, kind: 'event' })
+      for (const inst of expandInRange(e, range.start, range.end)) {
+        const key = toDateKey(new Date(inst.start))
+        ;(map[key] ||= []).push({ ...inst, kind: 'event' })
+      }
     }
     for (const t of tasks) {
       if (!t.due || t.done) continue
@@ -44,7 +61,7 @@ export default function CalendarWidget() {
       map[key].sort((a, b) => new Date(a.start) - new Date(b.start))
     }
     return map
-  }, [events, tasks])
+  }, [events, tasks, range])
 
   function saveEvent(ev) {
     setEvents((list) => {
@@ -63,7 +80,9 @@ export default function CalendarWidget() {
   }
   function openItem(item) {
     if (item.kind === 'task') return // tasks are edited in the Tasks widget
-    setEditing(events.find((e) => e.id === item.id) || item)
+    // A recurring occurrence points back to its series master via seriesId.
+    const masterId = item.seriesId || item.id
+    setEditing(events.find((e) => e.id === masterId) || item)
   }
 
   function importFile(e) {
@@ -187,6 +206,7 @@ function MonthView({ cursor, byDay, onDay, onItem }) {
                         {it.kind === 'task' && '✓ '}
                         {!it.allDay && <span className="pill-time">{fmtTime(it.start)}</span>}
                         {it.title}
+                        {it.recurringInstance && <span className="pill-recur" title="Recurring"> ↻</span>}
                       </button>
                     ))}
                     {items.length > 3 && <div className="cal-more">+{items.length - 3} more</div>}
@@ -243,8 +263,10 @@ function EventEditor({ event, onClose, onSave, onDelete }) {
     ...event,
     startLocal: fmtDateTimeLocal(event.start),
     endLocal: event.end ? fmtDateTimeLocal(event.end) : fmtDateTimeLocal(new Date(new Date(event.start).getTime() + 3600000)),
+    repeat: event.recurrence?.freq || 'none',
   })
   const isNew = !event.title
+  const richRule = event.recurrence && (event.recurrence.byday?.length || event.recurrence.count || event.recurrence.until || event.recurrence.interval > 1)
 
   function set(patch) { setForm((f) => ({ ...f, ...patch })) }
 
@@ -253,12 +275,21 @@ function EventEditor({ event, onClose, onSave, onDelete }) {
     if (!form.title.trim()) return
     const start = new Date(form.startLocal)
     const end = new Date(form.endLocal)
+    // Build the recurrence rule. If the frequency is unchanged, keep the
+    // original (possibly rich) imported rule; otherwise use a simple one.
+    let recurrence = null
+    if (form.repeat !== 'none') {
+      recurrence = event.recurrence && event.recurrence.freq === form.repeat
+        ? event.recurrence
+        : { freq: form.repeat, interval: 1 }
+    }
     onSave({
       id: form.id, uid: form.uid, title: form.title.trim(),
       description: form.description, location: form.location,
       start: start.toISOString(),
       end: (end > start ? end : new Date(start.getTime() + 3600000)).toISOString(),
       allDay: form.allDay, color: form.color, source: form.source || 'local',
+      recurrence, exdates: form.exdates || [],
     })
   }
 
@@ -302,6 +333,22 @@ function EventEditor({ event, onClose, onSave, onDelete }) {
         <div className="field">
           <label>Notes</label>
           <textarea className="input" value={form.description} onChange={(e) => set({ description: e.target.value })} placeholder="Optional" />
+        </div>
+        <div className="field">
+          <label>Repeat</label>
+          <select className="select" value={form.repeat} onChange={(e) => set({ repeat: e.target.value })} disabled={richRule}>
+            {SIMPLE_FREQS.map((f) => (
+              <option key={f.value} value={f.value}>{f.label}</option>
+            ))}
+          </select>
+          {richRule && (
+            <span className="faint" style={{ fontSize: 12 }}>
+              {describeRecurrence(event.recurrence)} (imported rule kept as-is)
+            </span>
+          )}
+          {!isNew && form.repeat !== 'none' && (
+            <span className="faint" style={{ fontSize: 12 }}>Editing or deleting affects the whole series.</span>
+          )}
         </div>
         <div className="field">
           <label>Color</label>
