@@ -1,0 +1,9 @@
+services:
+  homedash:
+    build: .
+    image: homedash:latest
+    container_name: homedash
+    ports:
+      # Host 8080 → container 80. Change the left number to serve elsewhere.
+      - "8080:80"
+    restart: unless-stopped

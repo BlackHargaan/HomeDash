@@ -73,6 +73,68 @@ npm run preview  # preview the production build
 
 Requires Node 18+.
 
+## Self-hosting with Docker
+
+HomeDash builds to static files, so the image is a tiny nginx container (no
+Node at runtime). Data lives in each visitor's browser — the container is
+stateless, so there are no volumes to manage.
+
+**Docker Compose** (recommended):
+
+```bash
+docker compose up -d --build
+```
+
+Then open **http://localhost:8080**. Change the host port by editing the
+`ports` mapping in `docker-compose.yml` (e.g. `- "3000:80"`).
+
+**Plain Docker:**
+
+```bash
+docker build -t homedash .
+docker run -d --name homedash -p 8080:80 --restart unless-stopped homedash
+```
+
+The image is a multi-stage build (`node:20-alpine` to build → `nginx:alpine`
+to serve) with gzip, long-lived caching for hashed assets, an SPA fallback and
+a container healthcheck. Put it behind your reverse proxy (Traefik, Caddy,
+nginx-proxy, etc.) for TLS and a hostname, just like Homarr/homepage.
+
+> Weather and (optional) cloud sync are called from the browser, so the
+> container itself needs no API keys or outbound configuration.
+
+### Deploying in Portainer
+
+Portainer's Stack **web editor can't build from a `Dockerfile`** (there's no
+build context), so use one of these:
+
+**Option A — pull the pre-built image (recommended).**
+The included GitHub Action (`.github/workflows/docker-publish.yml`) publishes an
+image to GHCR on every push to `main`. Make the package public once (GitHub →
+your profile → Packages → `homedash` → Package settings → change visibility to
+Public), then in Portainer create a **Stack → Web editor** and paste:
+
+```yaml
+services:
+  homedash:
+    image: ghcr.io/blackhargaan/homedash:latest
+    container_name: homedash
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+```
+
+Deploy, then browse to `http://<host>:8080`. To update later, use Portainer's
+**Recreate** (with "Re-pull image") or add a watchtower/Portainer webhook.
+If you keep the GHCR package private, add a registry in Portainer first
+(**Registries → Add → Custom**, `ghcr.io`, your GitHub username + a PAT with
+`read:packages`).
+
+**Option B — let Portainer build from Git (no registry).**
+Create a **Stack → Repository**, point it at this repo's URL, set the compose
+path to `docker-compose.yml`, and deploy. Portainer clones the repo and builds
+the image on the host using the `Dockerfile`.
+
 ## Architecture
 
 ```
