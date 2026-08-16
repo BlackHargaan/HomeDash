@@ -1,8 +1,23 @@
 import { createContext, useContext, useCallback, useEffect, useMemo, useState } from 'react'
-import { usePersistentState, uid } from '../lib/storage.js'
+import { usePersistentState, readStore, uid } from '../lib/storage.js'
 import { WIDGET_TYPES, widgetMeta } from '../widgets/registry.js'
 
 const DashboardContext = createContext(null)
+
+const HOME_BOARD = 'board_home'
+
+function defaultBoards() {
+  return [{ id: HOME_BOARD, name: 'Home', icon: '🏠' }]
+}
+
+// Boards each own a widget layout; `events`/`tasks`/`habits` stay global. On
+// first run we migrate any pre-boards single "widgets" key onto the Home board.
+function loadInitialBoardData() {
+  const existing = readStore('widgetsByBoard', null)
+  if (existing) return existing
+  const legacy = readStore('widgets', null)
+  return { [HOME_BOARD]: legacy || defaultWidgets() }
+}
 
 // The default board a first-time visitor sees.
 function defaultWidgets() {
@@ -33,8 +48,27 @@ export function DashboardProvider({ children }) {
   const [accent, setAccent] = usePersistentState('accent', 'indigo')
   const [wallpaper, setWallpaper] = usePersistentState('wallpaper', 'aurora')
   const [userName, setUserName] = usePersistentState('userName', '')
-  const [widgets, setWidgets] = usePersistentState('widgets', defaultWidgets)
   const [editMode, setEditMode] = useState(false)
+
+  // Multiple boards. Widgets for every board live in one object keyed by board id.
+  const [boards, setBoards] = usePersistentState('boards', defaultBoards)
+  const [activeBoardId, setActiveBoardId] = usePersistentState('activeBoard', HOME_BOARD)
+  const [widgetsByBoard, setWidgetsByBoard] = usePersistentState('widgetsByBoard', loadInitialBoardData)
+
+  // Guard against a dangling active board id (e.g. after a deletion).
+  const boardId = boards.some((b) => b.id === activeBoardId) ? activeBoardId : boards[0]?.id
+  const widgets = widgetsByBoard[boardId] || []
+
+  const setWidgets = useCallback(
+    (updater) => {
+      setWidgetsByBoard((prev) => {
+        const cur = prev[boardId] || []
+        const next = typeof updater === 'function' ? updater(cur) : updater
+        return { ...prev, [boardId]: next }
+      })
+    },
+    [boardId, setWidgetsByBoard],
+  )
 
   // Shared data stores — multiple widgets (and Stats) read/write these.
   const [events, setEvents] = usePersistentState('events', [])
@@ -97,6 +131,41 @@ export function DashboardProvider({ children }) {
 
   const existingTypes = useMemo(() => new Set(widgets.map((w) => w.type)), [widgets])
 
+  // ---- Board management ----
+  const switchBoard = useCallback((id) => setActiveBoardId(id), [setActiveBoardId])
+
+  const addBoard = useCallback(
+    (name = 'New board', icon = '🗂️') => {
+      const id = uid('board')
+      setBoards((prev) => [...prev, { id, name, icon }])
+      setWidgetsByBoard((prev) => ({ ...prev, [id]: [] }))
+      setActiveBoardId(id)
+      return id
+    },
+    [setBoards, setWidgetsByBoard, setActiveBoardId],
+  )
+
+  const renameBoard = useCallback(
+    (id, patch) => setBoards((prev) => prev.map((b) => (b.id === id ? { ...b, ...patch } : b))),
+    [setBoards],
+  )
+
+  const removeBoard = useCallback(
+    (id) => {
+      setBoards((prev) => {
+        if (prev.length <= 1) return prev // never delete the last board
+        const next = prev.filter((b) => b.id !== id)
+        if (id === activeBoardId) setActiveBoardId(next[0].id)
+        return next
+      })
+      setWidgetsByBoard((prev) => {
+        const { [id]: _drop, ...rest } = prev
+        return rest
+      })
+    },
+    [setBoards, setWidgetsByBoard, activeBoardId, setActiveBoardId],
+  )
+
   const value = {
     theme, setTheme,
     accent, setAccent,
@@ -107,6 +176,8 @@ export function DashboardProvider({ children }) {
     addWidget, removeWidget, updateWidget, applyLayout, resetBoard,
     existingTypes,
     types: WIDGET_TYPES,
+    // boards
+    boards, activeBoardId: boardId, switchBoard, addBoard, renameBoard, removeBoard,
     // shared stores
     events, setEvents,
     tasks, setTasks,

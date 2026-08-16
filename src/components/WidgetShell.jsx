@@ -4,10 +4,15 @@ import { widgetMeta } from '../widgets/registry.js'
 // Chrome around every widget: glass card, drag handle, title and edit tools.
 // `title` / `icon` can be overridden per instance (e.g. a named Notes widget).
 export default function WidgetShell({ widget, children, title, icon, actions }) {
-  const { editMode, removeWidget } = useDashboard()
+  const { editMode, removeWidget, updateWidget } = useDashboard()
   const meta = widgetMeta(widget.type)
   const displayTitle = title || widget.settings?.title || meta?.name || 'Widget'
   const displayIcon = icon || meta?.icon || '▫️'
+
+  function rename() {
+    const next = prompt('Rename this widget:', displayTitle)
+    if (next != null) updateWidget(widget.id, { title: next.trim() || undefined })
+  }
 
   return (
     <div className={`widget glass ${editMode ? 'is-edit' : ''}`}>
@@ -19,6 +24,7 @@ export default function WidgetShell({ widget, children, title, icon, actions }) 
         <span className="spacer" />
         {actions}
         <span className="widget-tools">
+          <button className="wtool" title="Rename widget" onClick={rename} aria-label="Rename widget">✎</button>
           <button
             className="wtool del"
             title="Remove widget"

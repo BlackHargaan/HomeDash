@@ -1,13 +1,27 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useDashboard } from './context/DashboardContext.jsx'
 import Grid from './components/Grid.jsx'
+import BoardTabs from './components/BoardTabs.jsx'
 import AddWidgetModal from './components/AddWidgetModal.jsx'
 import SettingsModal from './components/SettingsModal.jsx'
+import CommandPalette from './components/CommandPalette.jsx'
 
 export default function App() {
   const { editMode, setEditMode } = useDashboard()
   const [showAdd, setShowAdd] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
+  const [showPalette, setShowPalette] = useState(false)
+
+  useEffect(() => {
+    const onKey = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault()
+        setShowPalette((v) => !v)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
 
   return (
     <>
@@ -22,8 +36,13 @@ export default function App() {
             </div>
           </div>
 
+          <BoardTabs />
+
           <span className="topbar-spacer" />
 
+          <button className="btn ghost sm" onClick={() => setShowPalette(true)} title="Command palette (⌘K)">
+            <span>⌘</span>K
+          </button>
           <button className="btn" onClick={() => setShowAdd(true)}>
             <span>＋</span> Add widget
           </button>
@@ -50,6 +69,13 @@ export default function App() {
 
       {showAdd && <AddWidgetModal onClose={() => setShowAdd(false)} />}
       {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
+      {showPalette && (
+        <CommandPalette
+          onClose={() => setShowPalette(false)}
+          onAddWidget={() => setShowAdd(true)}
+          onSettings={() => setShowSettings(true)}
+        />
+      )}
     </>
   )
 }
