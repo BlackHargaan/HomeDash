@@ -16,6 +16,11 @@ export function readStore(key, fallback) {
 export function writeStore(key, value) {
   try {
     localStorage.setItem(PREFIX + key, JSON.stringify(value))
+    // Broadcast a change so the cloud-sync layer (if any) can debounce a push.
+    // Sync's own bookkeeping keys are excluded to avoid feedback loops.
+    if (!key.startsWith('sync:') && typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('homedash:change', { detail: { key } }))
+    }
   } catch {
     // Quota errors are non-fatal for a dashboard; ignore.
   }
@@ -48,27 +53,34 @@ export function useWidgetState(widgetId, initial) {
   return usePersistentState(`widget:${widgetId}`, initial)
 }
 
-// Snapshot every HomeDash key into a plain object (for JSON backup).
+// Device-local keys that must never leave this browser or be overwritten by a
+// restore/sync (they hold cloud credentials + sync bookkeeping).
+const LOCAL_ONLY = (k) => k.startsWith('sync:')
+
+// Snapshot every syncable HomeDash key into a plain object (for backup / sync).
 export function exportAllData() {
   const data = {}
   for (let i = 0; i < localStorage.length; i++) {
     const k = localStorage.key(i)
-    if (k && k.startsWith(PREFIX)) {
+    if (k && k.startsWith(PREFIX) && !LOCAL_ONLY(k.slice(PREFIX.length))) {
       try { data[k.slice(PREFIX.length)] = JSON.parse(localStorage.getItem(k)) } catch { /* skip */ }
     }
   }
   return { version: 1, exportedAt: new Date().toISOString(), data }
 }
 
-// Restore a backup produced by exportAllData(). Replaces all HomeDash keys.
+// Restore a backup produced by exportAllData(). Replaces syncable HomeDash keys
+// but leaves device-local (sync) keys untouched.
 export function importAllData(payload) {
   const data = payload?.data
   if (!data || typeof data !== 'object') throw new Error('Invalid backup file')
   for (let i = localStorage.length - 1; i >= 0; i--) {
     const k = localStorage.key(i)
-    if (k && k.startsWith(PREFIX)) localStorage.removeItem(k)
+    if (k && k.startsWith(PREFIX) && !LOCAL_ONLY(k.slice(PREFIX.length))) localStorage.removeItem(k)
   }
-  for (const [k, v] of Object.entries(data)) writeStore(k, v)
+  for (const [k, v] of Object.entries(data)) {
+    if (!LOCAL_ONLY(k)) writeStore(k, v)
+  }
 }
 
 export function uid(prefix = 'id') {

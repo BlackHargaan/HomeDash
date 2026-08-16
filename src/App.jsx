@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useDashboard } from './context/DashboardContext.jsx'
+import { useSync } from './context/SyncContext.jsx'
 import Grid from './components/Grid.jsx'
 import BoardTabs from './components/BoardTabs.jsx'
 import AddWidgetModal from './components/AddWidgetModal.jsx'
@@ -9,6 +10,7 @@ import Reminders from './components/Reminders.jsx'
 
 export default function App() {
   const { editMode, setEditMode } = useDashboard()
+  const { user, status } = useSync()
   const [showAdd, setShowAdd] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [showPalette, setShowPalette] = useState(false)
@@ -42,6 +44,15 @@ export default function App() {
 
           <span className="topbar-spacer" />
 
+          {user && (
+            <button
+              className="btn ghost sm"
+              onClick={() => setShowSettings(true)}
+              title={`Cloud sync: ${status}`}
+            >
+              <span className={`sync-badge ${status}`}>☁</span>
+            </button>
+          )}
           <button className="btn ghost sm" onClick={() => setShowPalette(true)} title="Command palette (⌘K)">
             <span>⌘</span>K
           </button>

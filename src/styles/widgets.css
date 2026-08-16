@@ -300,6 +300,23 @@
 .wc-del:hover { color: var(--danger); }
 .wc-add { margin-top: 6px; align-self: flex-start; }
 
+/* ---- Cloud sync badge + panel ---- */
+.sync-badge { font-size: 15px; }
+.sync-badge.synced { color: var(--ok); }
+.sync-badge.syncing { color: var(--accent); animation: pulse 1.2s ease-in-out infinite; }
+.sync-badge.error { color: var(--danger); }
+.sync-badge.idle { color: var(--text-dim); }
+@keyframes pulse { 50% { opacity: 0.35; } }
+
+
+.sync-signedin { display: flex; align-items: center; gap: 12px; justify-content: space-between; padding: 10px 0; }
+.sync-email { font-size: 14px; font-weight: 600; }
+.sync-sql {
+  margin-top: 10px; background: var(--input); border: 1px solid var(--card-border); border-radius: 10px;
+  padding: 12px; font-size: 11px; line-height: 1.5; overflow-x: auto; color: var(--text-dim);
+  white-space: pre; font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+}
+
 /* ---- Edit banner ---- */
 .edit-banner {
   position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%);
