@@ -22,6 +22,11 @@
 .weather-actions { margin-left: auto; display: flex; gap: 4px; }
 .weather-place { font-weight: 600; font-size: 14px; }
 .weather-meta { display: flex; gap: 12px; font-size: 12px; color: var(--text-dim); flex-wrap: wrap; }
+.weather-hourly { display: flex; gap: 4px; overflow-x: auto; padding: 8px 0 2px; }
+.wh-cell { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 34px; }
+.wh-time { font-size: 10px; white-space: nowrap; }
+.wh-emoji { font-size: 15px; }
+.wh-temp { font-size: 12px; font-weight: 600; }
 .weather-forecast { margin-top: auto; display: flex; gap: 6px; padding-top: 8px; border-top: 1px solid var(--line); }
 .fc-day { flex: 1; text-align: center; display: flex; flex-direction: column; gap: 2px; }
 .fc-name { font-size: 11px; color: var(--text-dim); }
@@ -222,6 +227,95 @@
 .ok-msg { color: var(--ok); font-size: 12px; margin-top: 8px !important; }
 .err-msg { color: var(--danger); font-size: 12px; margin-top: 8px !important; }
 .chip-inline { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
+
+/* ---- Agenda view ---- */
+.cal-agenda { display: flex; flex-direction: column; gap: 4px; overflow: auto; flex: 1; min-height: 0; }
+.cal-agenda.empty { justify-content: center; }
+.agenda-group { display: flex; gap: 12px; padding: 8px 2px; border-bottom: 1px solid var(--line); }
+.agenda-date { display: flex; align-items: center; gap: 8px; min-width: 96px; cursor: pointer; position: relative; }
+.agenda-dnum { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; }
+.agenda-date.today .agenda-dnum { color: var(--accent); }
+.agenda-dinfo { display: flex; flex-direction: column; line-height: 1.2; }
+.agenda-dow { font-size: 12px; font-weight: 600; }
+.agenda-mon { font-size: 11px; }
+.agenda-todaytag { font-size: 9px; font-weight: 700; color: var(--accent); background: var(--accent-soft); padding: 1px 5px; border-radius: 999px; }
+.agenda-items { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.agenda-item {
+  display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 8px; cursor: pointer;
+  background: transparent; border: none; color: var(--text); font: inherit; text-align: left; width: 100%;
+}
+.agenda-item:hover { background: var(--input); }
+.agenda-dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; }
+.agenda-dot.is-task { background: transparent; border: 2px solid var(--accent); }
+.agenda-time { font-size: 11px; color: var(--text-dim); min-width: 52px; font-weight: 600; }
+.agenda-title { font-size: 13px; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.agenda-loc { font-size: 11px; }
+.pill-recur { opacity: 0.7; }
+
+/* ---- Today panel ---- */
+.today-w { display: flex; flex-direction: column; gap: 14px; height: 100%; }
+.today-hero { }
+.today-greet { font-size: 20px; font-weight: 800; letter-spacing: -0.02em; }
+.today-date { font-size: 13px; color: var(--text-dim); }
+.today-block { display: flex; flex-direction: column; gap: 6px; }
+.today-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-faint); }
+.today-empty { font-size: 13px; color: var(--text-dim); }
+.today-next { display: flex; align-items: center; gap: 8px; }
+.today-next.allday { opacity: 0.85; }
+.today-dot { width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto; }
+.today-next-title { font-size: 14px; font-weight: 600; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.today-next-time { font-size: 12px; color: var(--accent); font-weight: 700; }
+.today-task { display: flex; align-items: center; gap: 8px; }
+.today-pri { width: 7px; height: 7px; border-radius: 50%; flex: 0 0 auto; background: var(--text-faint); }
+.today-pri.p-high { background: var(--danger); }
+.today-pri.p-med { background: var(--accent); }
+.today-task-title { font-size: 13px; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.today-due { font-size: 11px; color: var(--text-dim); }
+.today-due.over { color: var(--danger); }
+.today-habits { display: flex; flex-wrap: wrap; gap: 6px; }
+.today-habit-chip { font-size: 12px; padding: 3px 9px; border-radius: 999px; background: var(--input); border: 1px solid var(--card-border); }
+
+/* ---- Countdown ---- */
+.cd { position: relative; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 2px; }
+.cd-emoji { font-size: 26px; }
+.cd-num { font-size: clamp(34px, 9vw, 52px); font-weight: 800; letter-spacing: -0.03em; line-height: 1; color: var(--accent); }
+.cd-unit { font-size: 13px; color: var(--text-dim); font-weight: 600; }
+.cd-sub { font-size: 12px; font-variant-numeric: tabular-nums; }
+.cd-title { font-size: 13px; font-weight: 600; margin-top: 4px; }
+.cd-edit { position: absolute; top: 0; right: 0; opacity: 0; transition: opacity 0.15s; }
+.cd:hover .cd-edit { opacity: 1; }
+.cd-setup { display: flex; flex-direction: column; }
+
+/* ---- World clocks ---- */
+.wc { display: flex; flex-direction: column; gap: 4px; }
+.wc-row { display: flex; align-items: center; gap: 10px; padding: 7px 6px; border-radius: 9px; }
+.wc-row:hover { background: var(--input); }
+.wc-icon { font-size: 15px; }
+.wc-place { flex: 1; min-width: 0; }
+.wc-label { font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wc-day { font-size: 11px; }
+.wc-time { font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+.wc-del { opacity: 0; border: none; background: none; color: var(--text-faint); cursor: pointer; font-size: 12px; }
+.wc-row:hover .wc-del { opacity: 1; }
+.wc-del:hover { color: var(--danger); }
+.wc-add { margin-top: 6px; align-self: flex-start; }
+
+/* ---- Cloud sync badge + panel ---- */
+.sync-badge { font-size: 15px; }
+.sync-badge.synced { color: var(--ok); }
+.sync-badge.syncing { color: var(--accent); animation: pulse 1.2s ease-in-out infinite; }
+.sync-badge.error { color: var(--danger); }
+.sync-badge.idle { color: var(--text-dim); }
+@keyframes pulse { 50% { opacity: 0.35; } }
+
+
+.sync-signedin { display: flex; align-items: center; gap: 12px; justify-content: space-between; padding: 10px 0; }
+.sync-email { font-size: 14px; font-weight: 600; }
+.sync-sql {
+  margin-top: 10px; background: var(--input); border: 1px solid var(--card-border); border-radius: 10px;
+  padding: 12px; font-size: 11px; line-height: 1.5; overflow-x: auto; color: var(--text-dim);
+  white-space: pre; font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+}
 
 /* ---- Edit banner ---- */
 .edit-banner {

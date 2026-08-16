@@ -4,6 +4,7 @@
 // best-effort — floating and UTC (Z) times are supported; VTIMEZONE offset
 // tables are not resolved (the local offset is assumed for naive values).
 import { uid } from './storage.js'
+import { parseRRule } from './recurrence.js'
 
 function unfold(text) {
   // RFC 5545 line folding: continuation lines start with a space or tab.
@@ -89,11 +90,22 @@ export function parseICS(text) {
         cur.end = date
         break
       }
+      case 'RRULE':
+        cur.rrule = value
+        break
+      case 'EXDATE': {
+        // One EXDATE line may carry a comma-separated list of dates.
+        const dates = value.split(',').map((v) => parseIcsDate(v, params).date).filter(Boolean)
+        cur.exdates = [...(cur.exdates || []), ...dates.map((d) => d.toISOString())]
+        break
+      }
       default:
         break
     }
   }
-  return events.filter((e) => e.start instanceof Date && !isNaN(e.start))
+  // finalizeEvent stores `start` as an ISO string, so validate the string form
+  // (an invalid/absent DTSTART yields a null start we want to drop).
+  return events.filter((e) => e.start && !isNaN(new Date(e.start).getTime()))
 }
 
 function finalizeEvent(cur) {
@@ -113,6 +125,8 @@ function finalizeEvent(cur) {
     allDay: !!cur.allDay,
     color: 'indigo',
     source: 'import',
+    recurrence: parseRRule(cur.rrule, (v) => parseIcsDate(v, {}).date),
+    exdates: cur.exdates || [],
   }
 }
 
@@ -132,6 +146,16 @@ function esc(val = '') {
   return String(val).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n')
 }
 
+function rruleToString(rec) {
+  if (!rec || !rec.freq) return ''
+  const parts = [`FREQ=${rec.freq}`]
+  if (rec.interval && rec.interval > 1) parts.push(`INTERVAL=${rec.interval}`)
+  if (rec.count) parts.push(`COUNT=${rec.count}`)
+  if (rec.until) parts.push(`UNTIL=${icsDate(rec.until, false)}`)
+  if (rec.byday && rec.byday.length) parts.push(`BYDAY=${rec.byday.join(',')}`)
+  return parts.join(';')
+}
+
 export function eventsToICS(events) {
   const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//HomeDash//EN', 'CALSCALE:GREGORIAN']
   for (const e of events) {
@@ -144,6 +168,11 @@ export function eventsToICS(events) {
     lines.push(`SUMMARY:${esc(e.title)}`)
     if (e.description) lines.push(`DESCRIPTION:${esc(e.description)}`)
     if (e.location) lines.push(`LOCATION:${esc(e.location)}`)
+    const rrule = rruleToString(e.recurrence)
+    if (rrule) lines.push(`RRULE:${rrule}`)
+    if (e.exdates && e.exdates.length) {
+      lines.push(`EXDATE:${e.exdates.map((d) => icsDate(d, e.allDay)).join(',')}`)
+    }
     lines.push('END:VEVENT')
   }
   lines.push('END:VCALENDAR')

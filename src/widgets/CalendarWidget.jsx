@@ -2,12 +2,16 @@ import { useMemo, useRef, useState } from 'react'
 import { useDashboard } from '../context/DashboardContext.jsx'
 import { uid } from '../lib/storage.js'
 import { parseICS, eventsToICS } from '../lib/ics.js'
+import { expandInRange, collectOccurrences, describeRecurrence, SIMPLE_FREQS } from '../lib/recurrence.js'
 import { EVENT_COLORS, ACCENTS } from './registry.js'
 import Modal from '../components/Modal.jsx'
 import {
   monthMatrix, weekDays, isSameDay, toDateKey, fromDateKey,
   fmtMonthYear, fmtTime, fmtDateTimeLocal, WEEKDAY_SHORT,
 } from '../lib/date.js'
+
+function startOf(d) { const x = new Date(d); x.setHours(0, 0, 0, 0); return x }
+function endOf(d) { const x = new Date(d); x.setHours(23, 59, 59, 999); return x }
 
 function blankEvent(day) {
   const start = new Date(day)
@@ -16,8 +20,18 @@ function blankEvent(day) {
   return {
     id: uid('evt'), uid: uid('uid'), title: '', description: '', location: '',
     start: start.toISOString(), end: end.toISOString(), allDay: false, color: 'indigo', source: 'local',
+    reminderMinutes: 10,
   }
 }
+
+const REMINDER_OPTIONS = [
+  { value: '', label: 'No reminder' },
+  { value: '0', label: 'At start time' },
+  { value: '5', label: '5 minutes before' },
+  { value: '10', label: '10 minutes before' },
+  { value: '30', label: '30 minutes before' },
+  { value: '60', label: '1 hour before' },
+]
 
 export default function CalendarWidget() {
   const { events, setEvents, tasks } = useDashboard()
@@ -27,13 +41,26 @@ export default function CalendarWidget() {
   const [showImport, setShowImport] = useState(false)
   const fileRef = useRef(null)
 
-  // Index events + due-dated tasks by day key.
+  // The span of days currently on screen — recurring events are expanded only
+  // within this window.
+  const range = useMemo(() => {
+    if (view === 'week') {
+      const days = weekDays(cursor)
+      return { start: startOf(days[0]), end: endOf(days[6]) }
+    }
+    const weeks = monthMatrix(cursor.getFullYear(), cursor.getMonth())
+    return { start: startOf(weeks[0][0]), end: endOf(weeks[5][6]) }
+  }, [cursor, view])
+
+  // Index events (expanding recurrences) + due-dated tasks by day key.
   const byDay = useMemo(() => {
     const map = {}
     for (const e of events) {
       if (!e.start) continue
-      const key = toDateKey(new Date(e.start))
-      ;(map[key] ||= []).push({ ...e, kind: 'event' })
+      for (const inst of expandInRange(e, range.start, range.end)) {
+        const key = toDateKey(new Date(inst.start))
+        ;(map[key] ||= []).push({ ...inst, kind: 'event' })
+      }
     }
     for (const t of tasks) {
       if (!t.due || t.done) continue
@@ -44,7 +71,7 @@ export default function CalendarWidget() {
       map[key].sort((a, b) => new Date(a.start) - new Date(b.start))
     }
     return map
-  }, [events, tasks])
+  }, [events, tasks, range])
 
   function saveEvent(ev) {
     setEvents((list) => {
@@ -63,7 +90,9 @@ export default function CalendarWidget() {
   }
   function openItem(item) {
     if (item.kind === 'task') return // tasks are edited in the Tasks widget
-    setEditing(events.find((e) => e.id === item.id) || item)
+    // A recurring occurrence points back to its series master via seriesId.
+    const masterId = item.seriesId || item.id
+    setEditing(events.find((e) => e.id === masterId) || item)
   }
 
   function importFile(e) {
@@ -96,20 +125,21 @@ export default function CalendarWidget() {
         <div className="cal-nav">
           <button className="wtool" onClick={() => shift(setCursor, view, -1)} aria-label="Previous">‹</button>
           <button className="btn sm ghost" onClick={() => setCursor(new Date())}>Today</button>
-          <button className="wtool" onClick={() => shift(setCursor, view, 1)} aria-label="Next">›</button>
-          <span className="cal-title">{monthTitle}</span>
+          <button className="wtool" onClick={() => shift(setCursor, view, 1)} aria-label="Next" disabled={view === 'agenda'}>›</button>
+          <span className="cal-title">{view === 'agenda' ? 'Agenda' : monthTitle}</span>
         </div>
         <span className="spacer" />
         <div className="cal-viewtoggle">
           <button className={`chip ${view === 'month' ? 'on' : ''}`} onClick={() => setView('month')}>Month</button>
           <button className={`chip ${view === 'week' ? 'on' : ''}`} onClick={() => setView('week')}>Week</button>
+          <button className={`chip ${view === 'agenda' ? 'on' : ''}`} onClick={() => setView('agenda')}>Agenda</button>
         </div>
         <button className="wtool" title="Import / Sync" onClick={() => setShowImport(true)}>⇩</button>
       </div>
 
-      {view === 'month'
-        ? <MonthView cursor={cursor} byDay={byDay} onDay={openDay} onItem={openItem} />
-        : <WeekView cursor={cursor} byDay={byDay} onDay={openDay} onItem={openItem} />}
+      {view === 'month' && <MonthView cursor={cursor} byDay={byDay} onDay={openDay} onItem={openItem} />}
+      {view === 'week' && <WeekView cursor={cursor} byDay={byDay} onDay={openDay} onItem={openItem} />}
+      {view === 'agenda' && <AgendaView events={events} tasks={tasks} onItem={openItem} onDay={openDay} />}
 
       <input ref={fileRef} type="file" accept=".ics,text/calendar" hidden onChange={importFile} />
 
@@ -187,6 +217,7 @@ function MonthView({ cursor, byDay, onDay, onItem }) {
                         {it.kind === 'task' && '✓ '}
                         {!it.allDay && <span className="pill-time">{fmtTime(it.start)}</span>}
                         {it.title}
+                        {it.recurringInstance && <span className="pill-recur" title="Recurring"> ↻</span>}
                       </button>
                     ))}
                     {items.length > 3 && <div className="cal-more">+{items.length - 3} more</div>}
@@ -237,14 +268,77 @@ function WeekView({ cursor, byDay, onDay, onItem }) {
   )
 }
 
+/* ---------------- Agenda view ---------------- */
+function AgendaView({ events, tasks, onItem, onDay }) {
+  const now = new Date()
+  const start = new Date(now); start.setHours(0, 0, 0, 0)
+  const end = new Date(start.getTime() + 60 * 24 * 60 * 60 * 1000) // next 60 days
+
+  const items = useMemo(() => {
+    const occ = collectOccurrences(events, start, end).map((e) => ({ ...e, kind: 'event' }))
+    const dueTasks = tasks
+      .filter((t) => t.due && !t.done)
+      .map((t) => ({ id: t.id, title: t.title, kind: 'task', color: 'amber', allDay: true, start: fromDateKey(t.due).toISOString() }))
+      .filter((t) => new Date(t.start) >= start && new Date(t.start) <= end)
+    return [...occ, ...dueTasks].sort((a, b) => new Date(a.start) - new Date(b.start))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [events, tasks])
+
+  // Group by day key.
+  const groups = []
+  let lastKey = null
+  for (const it of items) {
+    const key = toDateKey(new Date(it.start))
+    if (key !== lastKey) { groups.push({ key, day: new Date(it.start), items: [] }); lastKey = key }
+    groups[groups.length - 1].items.push(it)
+  }
+
+  if (groups.length === 0) {
+    return <div className="cal-agenda empty"><div className="empty-hint">Nothing scheduled in the next 60 days.</div></div>
+  }
+
+  return (
+    <div className="cal-agenda">
+      {groups.map((g) => {
+        const isToday = isSameDay(g.day, now)
+        return (
+          <div key={g.key} className="agenda-group">
+            <div className={`agenda-date ${isToday ? 'today' : ''}`} onClick={() => onDay(g.day)}>
+              <span className="agenda-dnum">{g.day.getDate()}</span>
+              <span className="agenda-dinfo">
+                <span className="agenda-dow">{g.day.toLocaleDateString(undefined, { weekday: 'long' })}</span>
+                <span className="agenda-mon faint">{g.day.toLocaleDateString(undefined, { month: 'short', year: g.day.getFullYear() !== now.getFullYear() ? 'numeric' : undefined })}</span>
+              </span>
+              {isToday && <span className="agenda-todaytag">Today</span>}
+            </div>
+            <div className="agenda-items">
+              {g.items.map((it) => (
+                <button key={it.id} className="agenda-item" onClick={() => onItem(it)}>
+                  <span className={`agenda-dot c-${it.color} ${it.kind === 'task' ? 'is-task' : ''}`} />
+                  <span className="agenda-time">{it.kind === 'task' ? 'Task' : it.allDay ? 'All day' : fmtTime(it.start)}</span>
+                  <span className="agenda-title">{it.title}{it.recurringInstance && <span className="pill-recur"> ↻</span>}</span>
+                  {it.location && <span className="agenda-loc faint">📍 {it.location}</span>}
+                </button>
+              ))}
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 /* ---------------- Event editor ---------------- */
 function EventEditor({ event, onClose, onSave, onDelete }) {
   const [form, setForm] = useState({
     ...event,
     startLocal: fmtDateTimeLocal(event.start),
     endLocal: event.end ? fmtDateTimeLocal(event.end) : fmtDateTimeLocal(new Date(new Date(event.start).getTime() + 3600000)),
+    repeat: event.recurrence?.freq || 'none',
+    reminder: typeof event.reminderMinutes === 'number' ? String(event.reminderMinutes) : '',
   })
   const isNew = !event.title
+  const richRule = event.recurrence && (event.recurrence.byday?.length || event.recurrence.count || event.recurrence.until || event.recurrence.interval > 1)
 
   function set(patch) { setForm((f) => ({ ...f, ...patch })) }
 
@@ -253,12 +347,22 @@ function EventEditor({ event, onClose, onSave, onDelete }) {
     if (!form.title.trim()) return
     const start = new Date(form.startLocal)
     const end = new Date(form.endLocal)
+    // Build the recurrence rule. If the frequency is unchanged, keep the
+    // original (possibly rich) imported rule; otherwise use a simple one.
+    let recurrence = null
+    if (form.repeat !== 'none') {
+      recurrence = event.recurrence && event.recurrence.freq === form.repeat
+        ? event.recurrence
+        : { freq: form.repeat, interval: 1 }
+    }
     onSave({
       id: form.id, uid: form.uid, title: form.title.trim(),
       description: form.description, location: form.location,
       start: start.toISOString(),
       end: (end > start ? end : new Date(start.getTime() + 3600000)).toISOString(),
       allDay: form.allDay, color: form.color, source: form.source || 'local',
+      recurrence, exdates: form.exdates || [],
+      reminderMinutes: form.allDay || form.reminder === '' ? null : Number(form.reminder),
     })
   }
 
@@ -302,6 +406,30 @@ function EventEditor({ event, onClose, onSave, onDelete }) {
         <div className="field">
           <label>Notes</label>
           <textarea className="input" value={form.description} onChange={(e) => set({ description: e.target.value })} placeholder="Optional" />
+        </div>
+        {!form.allDay && (
+          <div className="field">
+            <label>Remind me</label>
+            <select className="select" value={form.reminder} onChange={(e) => set({ reminder: e.target.value })}>
+              {REMINDER_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </div>
+        )}
+        <div className="field">
+          <label>Repeat</label>
+          <select className="select" value={form.repeat} onChange={(e) => set({ repeat: e.target.value })} disabled={richRule}>
+            {SIMPLE_FREQS.map((f) => (
+              <option key={f.value} value={f.value}>{f.label}</option>
+            ))}
+          </select>
+          {richRule && (
+            <span className="faint" style={{ fontSize: 12 }}>
+              {describeRecurrence(event.recurrence)} (imported rule kept as-is)
+            </span>
+          )}
+          {!isNew && form.repeat !== 'none' && (
+            <span className="faint" style={{ fontSize: 12 }}>Editing or deleting affects the whole series.</span>
+          )}
         </div>
         <div className="field">
           <label>Color</label>
