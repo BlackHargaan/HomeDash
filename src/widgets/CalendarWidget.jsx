@@ -34,12 +34,13 @@ const REMINDER_OPTIONS = [
 ]
 
 export default function CalendarWidget() {
-  const { events, setEvents, tasks } = useDashboard()
+  const { events, setEvents, tasks, setTasks } = useDashboard()
   const [cursor, setCursor] = useState(new Date())
   const [view, setView] = useState('month')
   const [editing, setEditing] = useState(null) // event object or null
   const [showImport, setShowImport] = useState(false)
   const fileRef = useRef(null)
+  const dragItem = useRef(null) // item currently being dragged for reschedule
 
   // The span of days currently on screen — recurring events are expanded only
   // within this window.
@@ -73,15 +74,50 @@ export default function CalendarWidget() {
     return map
   }, [events, tasks, range])
 
-  function saveEvent(ev) {
-    setEvents((list) => {
-      const exists = list.some((e) => e.id === ev.id)
-      return exists ? list.map((e) => (e.id === ev.id ? ev : e)) : [...list, ev]
-    })
+  // Save honours the chosen scope for recurring occurrences:
+  //  - 'this' → store a per-occurrence override on the series master
+  //  - 'all'  → update the master's shared fields (and shift the series if the
+  //             time-of-day changed)
+  function saveEvent(ev, scope) {
+    if (ev._isOccurrence && ev._master) {
+      const master = ev._master
+      const fields = {
+        title: ev.title, description: ev.description, location: ev.location,
+        color: ev.color, allDay: ev.allDay, reminderMinutes: ev.reminderMinutes,
+      }
+      if (scope === 'this') {
+        const override = { ...fields, start: ev.start, end: ev.end }
+        setEvents((list) => list.map((e) =>
+          e.id === master.id ? { ...e, overrides: { ...(e.overrides || {}), [ev._originalStart]: override } } : e))
+      } else {
+        // 'all' — shift the whole series by any time delta and update shared fields.
+        const delta = new Date(ev.start).getTime() - new Date(ev._originalStart).getTime()
+        setEvents((list) => list.map((e) => {
+          if (e.id !== master.id) return e
+          const ns = new Date(new Date(e.start).getTime() + delta)
+          const ne = e.end ? new Date(new Date(e.end).getTime() + delta) : null
+          return { ...e, ...fields, recurrence: ev.recurrence, start: ns.toISOString(), end: ne ? ne.toISOString() : e.end }
+        }))
+      }
+    } else {
+      setEvents((list) => {
+        const exists = list.some((e) => e.id === ev.id)
+        return exists ? list.map((e) => (e.id === ev.id ? ev : e)) : [...list, ev]
+      })
+    }
     setEditing(null)
   }
-  function deleteEvent(id) {
-    setEvents((list) => list.filter((e) => e.id !== id))
+
+  // Delete: 'this' excludes just this occurrence; 'all' (or non-recurring)
+  // removes the whole event.
+  function deleteEvent(ev, scope) {
+    if (ev._isOccurrence && ev._master && scope === 'this') {
+      setEvents((list) => list.map((e) =>
+        e.id === ev._master.id ? { ...e, exdates: [...(e.exdates || []), ev._originalStart] } : e))
+    } else {
+      const id = ev._master ? ev._master.id : (ev.id || ev)
+      setEvents((list) => list.filter((e) => e.id !== id))
+    }
     setEditing(null)
   }
 
@@ -90,9 +126,39 @@ export default function CalendarWidget() {
   }
   function openItem(item) {
     if (item.kind === 'task') return // tasks are edited in the Tasks widget
-    // A recurring occurrence points back to its series master via seriesId.
-    const masterId = item.seriesId || item.id
-    setEditing(events.find((e) => e.id === masterId) || item)
+    if (item.seriesId) {
+      // A recurring occurrence: edit the shown instance, but remember the series
+      // master + this occurrence's original time so we can scope the save.
+      const master = events.find((e) => e.id === item.seriesId)
+      setEditing({ ...item, _isOccurrence: true, _master: master, _originalStart: item.originalStart })
+    } else {
+      setEditing(events.find((e) => e.id === item.id) || item)
+    }
+  }
+
+  // Drag-to-reschedule: move an item to `day`, keeping its time-of-day.
+  function reschedule(item, day) {
+    if (!item) return
+    if (item.kind === 'task') {
+      setTasks((list) => list.map((t) => (t.id === item.id ? { ...t, due: toDateKey(day) } : t)))
+      return
+    }
+    const oldStart = new Date(item.start)
+    const newStart = new Date(day)
+    newStart.setHours(oldStart.getHours(), oldStart.getMinutes(), 0, 0)
+    if (toDateKey(newStart) === toDateKey(oldStart)) return
+    const dur = item.end ? new Date(item.end).getTime() - oldStart.getTime() : 3600000
+    const newEnd = new Date(newStart.getTime() + dur)
+    if (item.seriesId) {
+      // Reschedule just this occurrence (per-occurrence override).
+      setEvents((list) => list.map((e) =>
+        e.id === item.seriesId
+          ? { ...e, overrides: { ...(e.overrides || {}), [item.originalStart]: { ...(e.overrides?.[item.originalStart] || {}), start: newStart.toISOString(), end: newEnd.toISOString() } } }
+          : e))
+    } else {
+      setEvents((list) => list.map((e) =>
+        e.id === item.id ? { ...e, start: newStart.toISOString(), end: newEnd.toISOString() } : e))
+    }
   }
 
   function importFile(e) {
@@ -137,8 +203,8 @@ export default function CalendarWidget() {
         <button className="wtool" title="Import / Sync" onClick={() => setShowImport(true)}>⇩</button>
       </div>
 
-      {view === 'month' && <MonthView cursor={cursor} byDay={byDay} onDay={openDay} onItem={openItem} />}
-      {view === 'week' && <WeekView cursor={cursor} byDay={byDay} onDay={openDay} onItem={openItem} />}
+      {view === 'month' && <MonthView cursor={cursor} byDay={byDay} onDay={openDay} onItem={openItem} dragItem={dragItem} onDrop={reschedule} />}
+      {view === 'week' && <WeekView cursor={cursor} byDay={byDay} onDay={openDay} onItem={openItem} dragItem={dragItem} onDrop={reschedule} />}
       {view === 'agenda' && <AgendaView events={events} tasks={tasks} onItem={openItem} onDay={openDay} />}
 
       <input ref={fileRef} type="file" accept=".ics,text/calendar" hidden onChange={importFile} />
@@ -182,8 +248,24 @@ function mergeEvents(existing, incoming) {
   return Array.from(byUid.values())
 }
 
+// Shared drag helpers for reschedule-by-dragging.
+function dragProps(item, dragItem) {
+  return {
+    draggable: true,
+    onDragStart: (e) => { dragItem.current = item; e.dataTransfer.effectAllowed = 'move'; try { e.dataTransfer.setData('text/plain', item.title || '') } catch { /* some browsers */ } },
+    onDragEnd: () => { dragItem.current = null },
+  }
+}
+function dropProps(day, dragItem, onDrop) {
+  return {
+    onDragOver: (e) => { if (dragItem.current) { e.preventDefault(); e.currentTarget.classList.add('drop-over') } },
+    onDragLeave: (e) => e.currentTarget.classList.remove('drop-over'),
+    onDrop: (e) => { e.preventDefault(); e.currentTarget.classList.remove('drop-over'); if (dragItem.current) { onDrop(dragItem.current, day) } },
+  }
+}
+
 /* ---------------- Month view ---------------- */
-function MonthView({ cursor, byDay, onDay, onItem }) {
+function MonthView({ cursor, byDay, onDay, onItem, dragItem, onDrop }) {
   const weeks = monthMatrix(cursor.getFullYear(), cursor.getMonth())
   const today = new Date()
   return (
@@ -204,6 +286,7 @@ function MonthView({ cursor, byDay, onDay, onItem }) {
                   key={key}
                   className={`cal-cell ${isCur ? '' : 'dim'} ${isToday ? 'today' : ''}`}
                   onClick={() => onDay(day)}
+                  {...dropProps(day, dragItem, onDrop)}
                 >
                   <div className="cal-daynum">{day.getDate()}</div>
                   <div className="cal-events">
@@ -213,6 +296,7 @@ function MonthView({ cursor, byDay, onDay, onItem }) {
                         className={`cal-pill c-${it.color} ${it.kind === 'task' ? 'is-task' : ''}`}
                         onClick={(e) => { e.stopPropagation(); onItem(it) }}
                         title={it.title}
+                        {...dragProps(it, dragItem)}
                       >
                         {it.kind === 'task' && '✓ '}
                         {!it.allDay && <span className="pill-time">{fmtTime(it.start)}</span>}
@@ -233,7 +317,7 @@ function MonthView({ cursor, byDay, onDay, onItem }) {
 }
 
 /* ---------------- Week view ---------------- */
-function WeekView({ cursor, byDay, onDay, onItem }) {
+function WeekView({ cursor, byDay, onDay, onItem, dragItem, onDrop }) {
   const days = weekDays(cursor)
   const today = new Date()
   return (
@@ -243,7 +327,7 @@ function WeekView({ cursor, byDay, onDay, onItem }) {
         const items = byDay[key] || []
         const isToday = isSameDay(day, today)
         return (
-          <div key={key} className={`cal-daycol ${isToday ? 'today' : ''}`}>
+          <div key={key} className={`cal-daycol ${isToday ? 'today' : ''}`} {...dropProps(day, dragItem, onDrop)}>
             <div className="cal-daycol-head" onClick={() => onDay(day)}>
               <span className="dow">{WEEKDAY_SHORT[day.getDay()]}</span>
               <span className="dnum">{day.getDate()}</span>
@@ -254,9 +338,11 @@ function WeekView({ cursor, byDay, onDay, onItem }) {
                   key={it.id}
                   className={`cal-pill wk c-${it.color} ${it.kind === 'task' ? 'is-task' : ''}`}
                   onClick={(e) => { e.stopPropagation(); onItem(it) }}
+                  {...dragProps(it, dragItem)}
                 >
                   {it.kind === 'task' ? '✓ ' : !it.allDay ? `${fmtTime(it.start)} · ` : ''}
                   {it.title}
+                  {it.recurringInstance && <span className="pill-recur"> ↻</span>}
                 </button>
               ))}
               {items.length === 0 && <div className="cal-daycol-empty">+</div>}
@@ -338,13 +424,12 @@ function EventEditor({ event, onClose, onSave, onDelete }) {
     reminder: typeof event.reminderMinutes === 'number' ? String(event.reminderMinutes) : '',
   })
   const isNew = !event.title
+  const isOccurrence = !!event._isOccurrence
   const richRule = event.recurrence && (event.recurrence.byday?.length || event.recurrence.count || event.recurrence.until || event.recurrence.interval > 1)
 
   function set(patch) { setForm((f) => ({ ...f, ...patch })) }
 
-  function submit(e) {
-    e.preventDefault()
-    if (!form.title.trim()) return
+  function build() {
     const start = new Date(form.startLocal)
     const end = new Date(form.endLocal)
     // Build the recurrence rule. If the frequency is unchanged, keep the
@@ -355,7 +440,7 @@ function EventEditor({ event, onClose, onSave, onDelete }) {
         ? event.recurrence
         : { freq: form.repeat, interval: 1 }
     }
-    onSave({
+    return {
       id: form.id, uid: form.uid, title: form.title.trim(),
       description: form.description, location: form.location,
       start: start.toISOString(),
@@ -363,23 +448,44 @@ function EventEditor({ event, onClose, onSave, onDelete }) {
       allDay: form.allDay, color: form.color, source: form.source || 'local',
       recurrence, exdates: form.exdates || [],
       reminderMinutes: form.allDay || form.reminder === '' ? null : Number(form.reminder),
-    })
+      _isOccurrence: event._isOccurrence, _master: event._master, _originalStart: event._originalStart,
+    }
   }
+
+  function submit(e, scope = 'all') {
+    e?.preventDefault?.()
+    if (!form.title.trim()) return
+    onSave(build(), scope)
+  }
+  const delRef = { id: form.id, _isOccurrence: event._isOccurrence, _master: event._master, _originalStart: event._originalStart }
 
   return (
     <Modal
-      title={isNew ? 'New event' : 'Edit event'}
+      title={isNew ? 'New event' : isOccurrence ? 'Edit occurrence' : 'Edit event'}
       onClose={onClose}
       footer={
-        <>
-          {!isNew && <button className="btn danger ghost" onClick={() => onDelete(form.id)}>Delete</button>}
-          <span style={{ flex: 1 }} />
-          <button className="btn ghost" onClick={onClose}>Cancel</button>
-          <button className="btn primary" onClick={submit}>Save</button>
-        </>
+        isOccurrence ? (
+          <>
+            <button className="btn danger ghost sm" onClick={() => onDelete(delRef, 'this')}>Delete this</button>
+            <button className="btn danger ghost sm" onClick={() => onDelete(delRef, 'all')}>Delete all</button>
+            <span style={{ flex: 1 }} />
+            <button className="btn sm" onClick={(e) => submit(e, 'this')}>Save this event</button>
+            <button className="btn primary sm" onClick={(e) => submit(e, 'all')}>Save all</button>
+          </>
+        ) : (
+          <>
+            {!isNew && <button className="btn danger ghost" onClick={() => onDelete(delRef, 'all')}>Delete</button>}
+            <span style={{ flex: 1 }} />
+            <button className="btn ghost" onClick={onClose}>Cancel</button>
+            <button className="btn primary" onClick={(e) => submit(e, 'all')}>Save</button>
+          </>
+        )
       }
     >
       <form onSubmit={submit}>
+        {isOccurrence && (
+          <div className="occ-note">↻ One occurrence of a repeating event. “Save this event” changes only this date; “Save all” changes the series.</div>
+        )}
         <div className="field">
           <label>Title</label>
           <input className="input" value={form.title} onChange={(e) => set({ title: e.target.value })} autoFocus placeholder="Event title" />
@@ -427,7 +533,7 @@ function EventEditor({ event, onClose, onSave, onDelete }) {
               {describeRecurrence(event.recurrence)} (imported rule kept as-is)
             </span>
           )}
-          {!isNew && form.repeat !== 'none' && (
+          {!isNew && !isOccurrence && form.repeat !== 'none' && (
             <span className="faint" style={{ fontSize: 12 }}>Editing or deleting affects the whole series.</span>
           )}
         </div>

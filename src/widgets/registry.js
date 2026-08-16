@@ -67,6 +67,12 @@ export const WIDGET_TYPES = {
     layout: { w: 4, h: 6, minW: 3, minH: 4 },
     singleton: true,
   },
+  kanban: {
+    name: 'Kanban Board',
+    icon: '🗃️',
+    description: 'Drag cards across To do / Doing / Done columns.',
+    layout: { w: 6, h: 7, minW: 4, minH: 4 },
+  },
   countdown: {
     name: 'Countdown',
     icon: '⏳',

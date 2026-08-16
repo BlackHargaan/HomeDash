@@ -52,6 +52,8 @@ export function expandInRange(event, rangeStart, rangeEnd) {
   const interval = rec.interval || 1
   const excluded = new Set((event.exdates || []).map((d) => new Date(d).getTime()))
 
+  const overrides = event.overrides || {} // { [originalStartISO]: patch | {deleted:true} }
+
   const out = []
   let generated = 0 // counts toward COUNT (RFC: exclusions still count)
 
@@ -59,14 +61,23 @@ export function expandInRange(event, rangeStart, rangeEnd) {
     if (generated >= maxCount) return false
     if (until && occ > until) return false
     generated++
-    if (!excluded.has(occ.getTime()) && occ >= rangeStart && occ <= rangeEnd) {
+    const originalStart = occ.toISOString()
+    if (excluded.has(occ.getTime())) return true // deleted-this-occurrence / EXDATE
+    const override = overrides[originalStart]
+    if (override?.deleted) return true
+    // The instant an override may relocate the event to — used for range test.
+    const shownStart = override?.start ? new Date(override.start) : occ
+    if (shownStart >= rangeStart && shownStart <= rangeEnd) {
       out.push({
         ...event,
+        ...(override || {}),
         id: `${event.id}__${occ.getTime()}`,
-        start: occ.toISOString(),
-        end: new Date(occ.getTime() + dur).toISOString(),
+        start: (override?.start ? new Date(override.start) : occ).toISOString(),
+        end: (override?.end ? new Date(override.end) : new Date(occ.getTime() + dur)).toISOString(),
         recurringInstance: true,
         seriesId: event.id,
+        originalStart,
+        edited: !!override,
       })
     }
     return true

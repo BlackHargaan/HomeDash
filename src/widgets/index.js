@@ -14,6 +14,7 @@ import IframeStatWidget from './IframeStatWidget.jsx'
 import TodayWidget from './TodayWidget.jsx'
 import CountdownWidget from './CountdownWidget.jsx'
 import WorldClockWidget from './WorldClockWidget.jsx'
+import KanbanWidget from './KanbanWidget.jsx'
 
 export const WIDGET_COMPONENTS = {
   clock: ClockWidget,
@@ -30,4 +31,5 @@ export const WIDGET_COMPONENTS = {
   today: TodayWidget,
   countdown: CountdownWidget,
   worldclock: WorldClockWidget,
+  kanban: KanbanWidget,
 }
