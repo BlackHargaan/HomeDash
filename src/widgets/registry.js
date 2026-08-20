@@ -103,6 +103,21 @@ export function widgetMeta(type) {
   return WIDGET_TYPES[type] || null
 }
 
+// Heights (px) used by the content-flow layout on tablet/phone, where the fixed
+// desktop grid is replaced by an auto-arranging column flow. Tuned to each
+// widget's natural content so short widgets stop leaving huge gaps.
+export const FLOW_HEIGHTS = {
+  clock: 150, weather: 250, calendar: 400, tasks: 320, notes: 220,
+  links: 210, habits: 250, pomodoro: 300, stats: 220, today: 340,
+  countdown: 175, worldclock: 250, kanban: 340, embed: 320, iframeStat: 160,
+}
+export function flowHeight(type) {
+  return FLOW_HEIGHTS[type] || 240
+}
+
+// Widgets that should span the full flow width even in the multi-column layout.
+export const FLOW_WIDE = new Set(['calendar', 'kanban'])
+
 export const ACCENTS = {
   indigo: '#8b93ff',
   violet: '#b98bff',

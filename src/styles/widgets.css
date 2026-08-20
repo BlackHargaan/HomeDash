@@ -5,7 +5,8 @@
 /* ---- Clock ---- */
 .clock { height: 100%; display: flex; flex-direction: column; justify-content: center; }
 .clock-time {
-  font-size: clamp(28px, 6vw, 46px); font-weight: 800; letter-spacing: -0.03em;
+  /* Scales with the widget's own width (cqi = 1% of container inline size). */
+  font-size: clamp(28px, 17cqi, 48px); font-weight: 800; letter-spacing: -0.03em;
   line-height: 1; display: flex; align-items: baseline; gap: 4px;
 }
 .clock-secs { font-size: 0.4em; font-weight: 600; color: var(--accent); }
@@ -16,7 +17,7 @@
 .weather { display: flex; flex-direction: column; gap: 8px; height: 100%; }
 .weather-top { display: flex; align-items: center; gap: 12px; }
 .weather-emoji { font-size: 40px; line-height: 1; }
-.weather-temp { font-size: 34px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; }
+.weather-temp { font-size: clamp(28px, 13cqi, 36px); font-weight: 800; letter-spacing: -0.03em; line-height: 1; }
 .weather-temp span { font-size: 0.5em; color: var(--text-dim); }
 .weather-label { font-size: 13px; color: var(--text-dim); }
 .weather-actions { margin-left: auto; display: flex; gap: 4px; }
@@ -129,7 +130,7 @@
 .stats { display: flex; flex-direction: column; gap: 12px; height: 100%; }
 .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .stat-tile { background: var(--input); border: 1px solid var(--card-border); border-radius: 14px; padding: 12px; }
-.stat-val { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; line-height: 1; }
+.stat-val { font-size: clamp(20px, 9cqi, 28px); font-weight: 800; letter-spacing: -0.02em; line-height: 1; }
 .stat-val .faint { font-size: 0.55em; font-weight: 600; }
 .stat-lbl { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
 .stat-focus { margin-top: auto; }
@@ -154,7 +155,7 @@
 /* ---- Integration stat ---- */
 .istat { position: relative; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 4px; }
 .istat-icon { font-size: 26px; }
-.istat-value { font-size: 30px; font-weight: 800; letter-spacing: -0.02em; word-break: break-word; }
+.istat-value { font-size: clamp(22px, 14cqi, 32px); font-weight: 800; letter-spacing: -0.02em; word-break: break-word; }
 .istat-label { font-size: 12px; color: var(--text-dim); }
 .istat-tools { position: absolute; top: 0; right: 0; display: flex; gap: 4px; opacity: 0; transition: opacity 0.15s; }
 .istat:hover .istat-tools { opacity: 1; }
@@ -278,7 +279,7 @@
 /* ---- Countdown ---- */
 .cd { position: relative; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 2px; }
 .cd-emoji { font-size: 26px; }
-.cd-num { font-size: clamp(34px, 9vw, 52px); font-weight: 800; letter-spacing: -0.03em; line-height: 1; color: var(--accent); }
+.cd-num { font-size: clamp(34px, 24cqi, 56px); font-weight: 800; letter-spacing: -0.03em; line-height: 1; color: var(--accent); }
 .cd-unit { font-size: 13px; color: var(--text-dim); font-weight: 600; }
 .cd-sub { font-size: 12px; font-variant-numeric: tabular-nums; }
 .cd-title { font-size: 13px; font-weight: 600; margin-top: 4px; }

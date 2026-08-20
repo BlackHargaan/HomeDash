@@ -227,6 +227,10 @@ body {
   flex-direction: column;
   overflow: hidden;
   position: relative;
+  /* Establish a query container so widget content scales to the widget's own
+     width (not the viewport) — see the @container rules in widgets.css. */
+  container-type: inline-size;
+  container-name: widget;
 }
 .widget-head {
   display: flex;
@@ -267,6 +271,21 @@ body {
 .widget-body::-webkit-scrollbar, .modal-body::-webkit-scrollbar { width: 8px; }
 .widget-body::-webkit-scrollbar-thumb, .modal-body::-webkit-scrollbar-thumb {
   background: var(--line); border-radius: 8px;
+}
+
+/* ============================================================
+   Flow layout (tablet / phone) — auto-arranging content-height grid
+   ============================================================ */
+.flow {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+.flow-item { min-width: 0; }
+.flow-item.wide { grid-column: 1 / -1; }
+@media (max-width: 620px) {
+  .flow { grid-template-columns: 1fr; }
 }
 
 /* ============================================================
@@ -371,3 +390,22 @@ textarea.input { resize: vertical; min-height: 60px; line-height: 1.5; }
 
 .muted { color: var(--text-dim); }
 .faint { color: var(--text-faint); }
+
+/* ============================================================
+   Small-screen shell tweaks
+   ============================================================ */
+@media (max-width: 720px) {
+  .app { padding: 16px 14px 48px; }
+  .topbar { gap: 10px; margin-bottom: 16px; }
+  .brand .sub { display: none; }
+  .brand-logo { width: 36px; height: 36px; font-size: 18px; }
+  .brand h1 { font-size: 18px; }
+  /* Board tabs scroll horizontally instead of wrapping the whole bar. */
+  .boardtabs { flex-wrap: nowrap; overflow-x: auto; max-width: 44vw; scrollbar-width: none; }
+  .boardtabs::-webkit-scrollbar { display: none; }
+  .btn { padding: 8px 11px; font-size: 12px; }
+}
+@media (max-width: 420px) {
+  .brand h1 { font-size: 16px; }
+  .boardtabs { max-width: 36vw; }
+}
