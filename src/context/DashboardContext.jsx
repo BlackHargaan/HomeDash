@@ -21,25 +21,28 @@ function loadInitialBoardData() {
 
 // The default board a first-time visitor sees.
 function defaultWidgets() {
-  const mk = (type, x, y) => {
+  const mk = (type, x, y, w, h) => {
     const m = widgetMeta(type).layout
     return {
       id: uid('w'),
       type,
       settings: {},
-      layout: { x, y, w: m.w, h: m.h },
+      layout: { x, y, w: w ?? m.w, h: h ?? m.h },
     }
   }
+  // A balanced 12-col starting board: top status row, a big calendar beside a
+  // task column, then a full-width bottom row so columns end evenly (no big
+  // holes). Users can rearrange freely from here.
   return [
-    mk('clock', 0, 0),
-    mk('weather', 3, 0),
-    mk('stats', 9, 0),
-    mk('calendar', 0, 3),
-    mk('tasks', 6, 3),
-    mk('pomodoro', 9, 3),
-    mk('habits', 0, 11),
-    mk('links', 4, 11),
-    mk('notes', 8, 11),
+    mk('clock', 0, 0, 3, 4),
+    mk('weather', 3, 0, 3, 4),
+    mk('stats', 6, 0, 3, 4),
+    mk('pomodoro', 9, 0, 3, 5),
+    mk('calendar', 0, 4, 6, 8),
+    mk('tasks', 6, 4, 3, 8),
+    mk('habits', 9, 5, 3, 7),
+    mk('links', 0, 12, 6, 5),
+    mk('notes', 6, 12, 6, 5),
   ]
 }
 

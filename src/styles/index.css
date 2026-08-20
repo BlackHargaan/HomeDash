@@ -72,36 +72,41 @@ body {
   overflow-x: hidden;
 }
 
-/* ---- Wallpapers (fixed background layer) ---- */
-.wallpaper {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  background: var(--bg);
-  transition: opacity 0.4s ease;
-}
-:root[data-wallpaper='aurora'] .wallpaper {
+/* ---- Wallpapers ----
+   Painted on <body> with background-attachment:fixed so the glow is anchored to
+   the viewport AND covers the whole scroll height — no seam where a fixed layer
+   would otherwise end. Falloffs are large and soft to avoid hard color bands. */
+.wallpaper { display: none; }
+
+body { background: var(--bg); }
+
+:root[data-wallpaper='aurora'] body {
   background:
-    radial-gradient(60% 60% at 15% 10%, color-mix(in srgb, var(--accent) 45%, transparent), transparent 60%),
-    radial-gradient(50% 50% at 85% 20%, rgba(120, 90, 255, 0.35), transparent 60%),
-    radial-gradient(60% 60% at 70% 90%, rgba(80, 200, 220, 0.25), transparent 60%),
+    radial-gradient(150% 90% at 50% -25%, color-mix(in srgb, var(--accent) 15%, transparent), transparent 72%),
+    radial-gradient(90% 80% at 100% 0%, rgba(120, 90, 255, 0.13), transparent 68%),
+    radial-gradient(90% 80% at 0% 100%, rgba(80, 200, 220, 0.09), transparent 68%),
     var(--bg);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
 }
-:root[data-wallpaper='mesh'] .wallpaper {
+:root[data-wallpaper='mesh'] body {
   background:
-    radial-gradient(40% 60% at 20% 30%, color-mix(in srgb, var(--accent) 40%, transparent), transparent 55%),
-    radial-gradient(35% 45% at 80% 70%, rgba(255, 130, 170, 0.3), transparent 55%),
-    conic-gradient(from 210deg at 60% 40%, rgba(90, 120, 255, 0.15), rgba(80, 210, 165, 0.12), rgba(255, 200, 100, 0.12), rgba(90, 120, 255, 0.15)),
+    radial-gradient(70% 80% at 15% 15%, color-mix(in srgb, var(--accent) 18%, transparent), transparent 65%),
+    radial-gradient(60% 70% at 90% 85%, rgba(255, 130, 170, 0.14), transparent 65%),
+    radial-gradient(80% 70% at 60% 50%, rgba(90, 120, 255, 0.08), transparent 70%),
     var(--bg);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
 }
-:root[data-wallpaper='grid'] .wallpaper {
+:root[data-wallpaper='grid'] body {
   background:
     linear-gradient(var(--line) 1px, transparent 1px) 0 0 / 40px 40px,
     linear-gradient(90deg, var(--line) 1px, transparent 1px) 0 0 / 40px 40px,
-    radial-gradient(60% 60% at 50% 0%, color-mix(in srgb, var(--accent) 25%, transparent), transparent 70%),
+    radial-gradient(120% 70% at 50% -10%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 72%),
     var(--bg);
+  background-attachment: fixed;
 }
-:root[data-wallpaper='plain'] .wallpaper { background: var(--bg); }
+:root[data-wallpaper='plain'] body { background: var(--bg); }
 
 /* ---- Glass card primitive ---- */
 .glass {
