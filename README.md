@@ -14,6 +14,9 @@ tracking. Drag, drop and resize widgets into a layout that's yours.
 - **Bento grid** — drag-to-rearrange, resize-from-the-corner widget layout that
   remembers where you put everything. Toggle **Edit** mode to rearrange, rename,
   add or remove widgets.
+- **Responsive** — the desktop grid gives way to an auto-arranging content-flow
+  layout on tablets and phones (multi-column → single column), and widget
+  contents scale to their own width via CSS container queries.
 - **⌘K command palette** — switch boards, add widgets, quick-add a task, create
   an event from natural language, toggle theme, and more.
 - **Glassmorphism UI**, dark-first with a light theme, 6 accent colors and 4

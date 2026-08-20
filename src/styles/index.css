@@ -72,36 +72,41 @@ body {
   overflow-x: hidden;
 }
 
-/* ---- Wallpapers (fixed background layer) ---- */
-.wallpaper {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  background: var(--bg);
-  transition: opacity 0.4s ease;
-}
-:root[data-wallpaper='aurora'] .wallpaper {
+/* ---- Wallpapers ----
+   Painted on <body> with background-attachment:fixed so the glow is anchored to
+   the viewport AND covers the whole scroll height — no seam where a fixed layer
+   would otherwise end. Falloffs are large and soft to avoid hard color bands. */
+.wallpaper { display: none; }
+
+body { background: var(--bg); }
+
+:root[data-wallpaper='aurora'] body {
   background:
-    radial-gradient(60% 60% at 15% 10%, color-mix(in srgb, var(--accent) 45%, transparent), transparent 60%),
-    radial-gradient(50% 50% at 85% 20%, rgba(120, 90, 255, 0.35), transparent 60%),
-    radial-gradient(60% 60% at 70% 90%, rgba(80, 200, 220, 0.25), transparent 60%),
+    radial-gradient(150% 90% at 50% -25%, color-mix(in srgb, var(--accent) 15%, transparent), transparent 72%),
+    radial-gradient(90% 80% at 100% 0%, rgba(120, 90, 255, 0.13), transparent 68%),
+    radial-gradient(90% 80% at 0% 100%, rgba(80, 200, 220, 0.09), transparent 68%),
     var(--bg);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
 }
-:root[data-wallpaper='mesh'] .wallpaper {
+:root[data-wallpaper='mesh'] body {
   background:
-    radial-gradient(40% 60% at 20% 30%, color-mix(in srgb, var(--accent) 40%, transparent), transparent 55%),
-    radial-gradient(35% 45% at 80% 70%, rgba(255, 130, 170, 0.3), transparent 55%),
-    conic-gradient(from 210deg at 60% 40%, rgba(90, 120, 255, 0.15), rgba(80, 210, 165, 0.12), rgba(255, 200, 100, 0.12), rgba(90, 120, 255, 0.15)),
+    radial-gradient(70% 80% at 15% 15%, color-mix(in srgb, var(--accent) 18%, transparent), transparent 65%),
+    radial-gradient(60% 70% at 90% 85%, rgba(255, 130, 170, 0.14), transparent 65%),
+    radial-gradient(80% 70% at 60% 50%, rgba(90, 120, 255, 0.08), transparent 70%),
     var(--bg);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
 }
-:root[data-wallpaper='grid'] .wallpaper {
+:root[data-wallpaper='grid'] body {
   background:
     linear-gradient(var(--line) 1px, transparent 1px) 0 0 / 40px 40px,
     linear-gradient(90deg, var(--line) 1px, transparent 1px) 0 0 / 40px 40px,
-    radial-gradient(60% 60% at 50% 0%, color-mix(in srgb, var(--accent) 25%, transparent), transparent 70%),
+    radial-gradient(120% 70% at 50% -10%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 72%),
     var(--bg);
+  background-attachment: fixed;
 }
-:root[data-wallpaper='plain'] .wallpaper { background: var(--bg); }
+:root[data-wallpaper='plain'] body { background: var(--bg); }
 
 /* ---- Glass card primitive ---- */
 .glass {
@@ -227,6 +232,10 @@ body {
   flex-direction: column;
   overflow: hidden;
   position: relative;
+  /* Establish a query container so widget content scales to the widget's own
+     width (not the viewport) — see the @container rules in widgets.css. */
+  container-type: inline-size;
+  container-name: widget;
 }
 .widget-head {
   display: flex;
@@ -267,6 +276,21 @@ body {
 .widget-body::-webkit-scrollbar, .modal-body::-webkit-scrollbar { width: 8px; }
 .widget-body::-webkit-scrollbar-thumb, .modal-body::-webkit-scrollbar-thumb {
   background: var(--line); border-radius: 8px;
+}
+
+/* ============================================================
+   Flow layout (tablet / phone) — auto-arranging content-height grid
+   ============================================================ */
+.flow {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+.flow-item { min-width: 0; }
+.flow-item.wide { grid-column: 1 / -1; }
+@media (max-width: 620px) {
+  .flow { grid-template-columns: 1fr; }
 }
 
 /* ============================================================
@@ -371,3 +395,22 @@ textarea.input { resize: vertical; min-height: 60px; line-height: 1.5; }
 
 .muted { color: var(--text-dim); }
 .faint { color: var(--text-faint); }
+
+/* ============================================================
+   Small-screen shell tweaks
+   ============================================================ */
+@media (max-width: 720px) {
+  .app { padding: 16px 14px 48px; }
+  .topbar { gap: 10px; margin-bottom: 16px; }
+  .brand .sub { display: none; }
+  .brand-logo { width: 36px; height: 36px; font-size: 18px; }
+  .brand h1 { font-size: 18px; }
+  /* Board tabs scroll horizontally instead of wrapping the whole bar. */
+  .boardtabs { flex-wrap: nowrap; overflow-x: auto; max-width: 44vw; scrollbar-width: none; }
+  .boardtabs::-webkit-scrollbar { display: none; }
+  .btn { padding: 8px 11px; font-size: 12px; }
+}
+@media (max-width: 420px) {
+  .brand h1 { font-size: 16px; }
+  .boardtabs { max-width: 36vw; }
+}

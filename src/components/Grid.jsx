@@ -1,15 +1,28 @@
 import { useRef } from 'react'
-import { Responsive, WidthProvider } from 'react-grid-layout'
+import GridLayout, { WidthProvider } from 'react-grid-layout'
 import { useDashboard } from '../context/DashboardContext.jsx'
 import { widgetMeta } from '../widgets/registry.js'
+import { useMediaQuery } from '../lib/useMediaQuery.js'
 import { WIDGET_COMPONENTS } from '../widgets/index.js'
 import WidgetShell from './WidgetShell.jsx'
+import FlowLayout from './FlowLayout.jsx'
 
-const ResponsiveGrid = WidthProvider(Responsive)
+const SizedGrid = WidthProvider(GridLayout)
+
+// Below this width the fixed-height desktop grid gives way to the content-flow
+// layout (see FlowLayout). Kept in sync with the CSS breakpoints.
+const DESKTOP_MIN = 1080
 
 export default function Grid() {
+  const compact = useMediaQuery(`(max-width: ${DESKTOP_MIN - 1}px)`)
+  if (compact) return <FlowLayout />
+  return <BentoGrid />
+}
+
+function BentoGrid() {
   const { widgets, editMode, applyLayout } = useDashboard()
-  const bp = useRef('lg')
+  // A ref keeps the initial render honest even before the first change event.
+  const first = useRef(true)
 
   const layout = widgets.map((w) => {
     const meta = widgetMeta(w.type)
@@ -25,11 +38,10 @@ export default function Grid() {
   })
 
   return (
-    <ResponsiveGrid
+    <SizedGrid
       className={`layout ${editMode ? 'edit' : ''}`}
-      layouts={{ lg: layout }}
-      breakpoints={{ lg: 1100, md: 820, sm: 560, xs: 0 }}
-      cols={{ lg: 12, md: 8, sm: 4, xs: 2 }}
+      layout={layout}
+      cols={12}
       rowHeight={68}
       margin={[16, 16]}
       containerPadding={[0, 0]}
@@ -37,11 +49,11 @@ export default function Grid() {
       isResizable={editMode}
       draggableHandle=".drag-handle"
       draggableCancel="input,textarea,button,select,a,.no-drag"
-      onBreakpointChange={(newBp) => { bp.current = newBp }}
+      compactType="vertical"
       onLayoutChange={(current) => {
-        // Only persist edits made at the primary (lg) breakpoint so narrow
-        // auto-reflowed layouts don't overwrite the user's arrangement.
-        if (bp.current === 'lg') applyLayout(current)
+        // Ignore the very first synthetic layout emit; persist real edits after.
+        if (first.current) { first.current = false; return }
+        applyLayout(current)
       }}
     >
       {widgets.map((w) => {
@@ -54,6 +66,6 @@ export default function Grid() {
           </div>
         )
       })}
-    </ResponsiveGrid>
+    </SizedGrid>
   )
 }
