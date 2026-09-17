@@ -76,6 +76,10 @@ npm run preview  # preview the production build
 
 Requires Node 18+.
 
+**Windows quick start:** double-click **`install-and-run.bat`** — it installs
+dependencies on first run, starts the dev server, and opens
+`http://localhost:5173` in your browser. (Node.js must be installed first.)
+
 ## Self-hosting with Docker
 
 HomeDash builds to static files, so the image is a tiny nginx container (no
