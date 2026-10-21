@@ -1,6 +1,7 @@
 import { createContext, useContext, useCallback, useEffect, useMemo, useState } from 'react'
 import { usePersistentState, readStore, uid } from '../lib/storage.js'
 import { WIDGET_TYPES, widgetMeta } from '../widgets/registry.js'
+import { DEFAULT_CALENDARS } from '../widgets/calendar/helpers.js'
 
 const DashboardContext = createContext(null)
 
@@ -76,6 +77,7 @@ export function DashboardProvider({ children }) {
 
   // Shared data stores — multiple widgets (and Stats) read/write these.
   const [events, setEvents] = usePersistentState('events', [])
+  const [calendars, setCalendars] = usePersistentState('calendars', DEFAULT_CALENDARS)
   const [tasks, setTasks] = usePersistentState('tasks', [])
   const [habits, setHabits] = usePersistentState('habits', [])
   const [pomoStats, setPomoStats] = usePersistentState('pomoStats', { sessions: 0, focusMinutes: 0, byDay: {} })
@@ -185,6 +187,7 @@ export function DashboardProvider({ children }) {
     boards, activeBoardId: boardId, switchBoard, addBoard, renameBoard, removeBoard,
     // shared stores
     events, setEvents,
+    calendars, setCalendars,
     tasks, setTasks,
     habits, setHabits,
     pomoStats, setPomoStats,

@@ -48,6 +48,12 @@ function splitLine(line) {
   return { name: name.toUpperCase(), params, value }
 }
 
+// The calendar's display name, if the feed provides one (Google/Apple do).
+export function icsCalendarName(text) {
+  const m = unfold(String(text)).match(/^X-WR-CALNAME(?:;[^:]*)?:(.+)$/m)
+  return m ? unescape(m[1].trim()) : null
+}
+
 export function parseICS(text) {
   const lines = unfold(text).split('\n')
   const events = []

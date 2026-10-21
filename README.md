@@ -23,15 +23,22 @@ fetching and homelab service checks. No accounts, no tracking.
   an event from natural language, toggle theme, and more.
 - **Glassmorphism UI**, dark-first with a light theme, 6 accent colors and 4
   wallpapers.
-- **Full calendar** — month, week & agenda views; click any day to create
+- **Full calendar** — day, week, month & agenda views; click any day to create
   events, edit colors/times/notes, delete. Tasks with due dates surface here too.
+  - **Hourly day/week grid** — drag an event to move it, drag its bottom edge to
+    change how long it lasts, or drag across empty time to create one.
+  - **Multiple calendars** — Personal, Work, subscribed feeds… each with its own
+    color, a show/hide toggle, rename and delete (☰ menu).
+  - **Search** (⌕) across past and upcoming events and tasks, and **jump to any
+    date** by clicking the title.
   - **Recurring events** — daily/weekly/monthly/yearly repeats with intervals,
     counts, end dates, weekly by-day rules and exception dates. Imported rules
     are honored; new events get a simple **Repeat** picker.
   - **Reminders** — get a browser notification a chosen time before an event
     (and when tasks are due today).
-  - **Import `.ics`** files from Google, Apple or Outlook, **sync from a URL**
-    (your Google Calendar *“secret iCal address”*), and **export** back to `.ics`.
+  - **Import `.ics`** files from Google, Apple or Outlook into their own
+    calendar, **subscribe to a feed URL** (your Google Calendar *“secret iCal
+    address”*, refreshed every 30 min), and **export** back to `.ics`.
   - **Natural-language add** — “Lunch with Sam tomorrow 1pm” becomes an event.
 - **Tasks** — due dates, priorities, filters, and a running "left" count.
 - **Today panel** — next event, top tasks and habits due, at a glance.
