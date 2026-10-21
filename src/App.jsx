@@ -24,6 +24,18 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false)
   const [showPalette, setShowPalette] = useState(false)
 
+  // Home-screen shortcuts from the web app manifest: /?action=add-widget|settings
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const action = params.get('action')
+    if (!action) return
+    if (action === 'add-widget') setShowAdd(true)
+    if (action === 'settings') setShowSettings(true)
+    params.delete('action')
+    const q = params.toString()
+    window.history.replaceState(null, '', window.location.pathname + (q ? `?${q}` : '') + window.location.hash)
+  }, [])
+
   useEffect(() => {
     const onKey = (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {

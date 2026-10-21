@@ -23,6 +23,21 @@ fetching and homelab service checks. No accounts, no tracking.
   an event from natural language, toggle theme, and more.
 - **Glassmorphism UI**, dark-first with a light theme, 6 accent colors and 4
   wallpapers.
+- **Make it yours** (Settings → Appearance):
+  - **Upload your own wallpaper** (or paste an image URL), with dim and blur
+    sliders. Images are shrunk to ~1920px so they sync with everything else.
+  - **Density** — Compact, Cozy or Roomy spacing — and a choice of **fonts**
+    (Default, Rounded, Humanist, Serif, Mono; system fonts, nothing to download).
+  - **Per-widget style** — in Edit mode, the 🎨 button on any widget sets its own
+    accent color, card look (Glass, Solid, Clear, Outline), an accent tint, or
+    hides its title bar.
+- **Layout templates** — start a new board (＋) from Productivity, Planner,
+  Homelab, Student, News & reading or Minimal, apply one to the current board,
+  or save any board as your own template (Settings → Board layout).
+- **Installable app (PWA)** — install HomeDash from the browser (Chrome/Edge:
+  menu → *Install HomeDash*; Android: *Add to Home screen*; iPhone: Share → *Add
+  to Home Screen*). It opens in its own window and loads offline. Needs HTTPS or
+  localhost.
 - **Full calendar** — day, week, month & agenda views; click any day to create
   events, edit colors/times/notes, delete. Tasks with due dates surface here too.
   - **Hourly day/week grid** — drag an event to move it, drag its bottom edge to
@@ -34,8 +49,12 @@ fetching and homelab service checks. No accounts, no tracking.
   - **Recurring events** — daily/weekly/monthly/yearly repeats with intervals,
     counts, end dates, weekly by-day rules and exception dates. Imported rules
     are honored; new events get a simple **Repeat** picker.
-  - **Reminders** — get a browser notification a chosen time before an event
-    (and when tasks are due today).
+  - **Reminders** — a notification a chosen time before an event, and at 9:00
+    for tasks due that day. With the HomeDash server, turn on **Push to this
+    device** (Settings → Notifications) and the server sends them even when no
+    HomeDash tab is open — ideal on a phone with HomeDash installed. Push needs
+    HTTPS (or localhost) and a browser with Web Push (Chrome, Edge, Firefox,
+    Safari 16.4+ on an installed app).
   - **Import `.ics`** files from Google, Apple or Outlook into their own
     calendar, **subscribe to a feed URL** (your Google Calendar *“secret iCal
     address”*, refreshed every 30 min), and **export** back to `.ics`.
@@ -194,6 +213,7 @@ a hostname, just like Homarr/homepage.
 |---|---|
 | `HOMEDASH_PASSWORD` | Require a password to open the dashboard. **Set this before exposing HomeDash outside your home network** — the server's fetch proxy and status checks can reach anything on your LAN. |
 | `HOMEDASH_DOCKER_CONTROL=true` | Allow restart buttons in the Docker widget. |
+| `HOMEDASH_PUSH_SUBJECT` | Contact the push services see for your server (`mailto:you@example.com` or a URL). Optional. |
 | `PORT`, `DATA_DIR`, `DOCKER_SOCKET` | Override the listen port (80 in the image), data folder (`/data`) or socket path. |
 
 **Docker widget:** mount the socket read-only —
@@ -203,8 +223,9 @@ buttons additionally need `HOMEDASH_DOCKER_CONTROL=true` and a writable socket
 do it if you want that widget.
 
 **API:** `/api/health`, `/api/state` (sync), `/api/proxy?url=` (server-side
-fetch), `/api/status` (reachability checks), `/api/docker/*`. See
-`server/app.js`.
+fetch), `/api/status` (reachability checks), `/api/docker/*`, `/api/push/*`
+(Web Push reminders — VAPID keys are generated on first run and kept in the data
+folder). See `server/app.js` and `server/push.js`.
 
 ### Deploying in Portainer
 

@@ -2,6 +2,8 @@ import { createContext, useContext, useCallback, useEffect, useMemo, useState } 
 import { usePersistentState, readStore, uid } from '../lib/storage.js'
 import { WIDGET_TYPES, widgetMeta } from '../widgets/registry.js'
 import { DEFAULT_CALENDARS } from '../widgets/calendar/helpers.js'
+import { fontStack } from '../lib/appearance.js'
+import { instantiate, templateById, templateFromWidgets } from '../lib/templates.js'
 
 const DashboardContext = createContext(null)
 
@@ -22,29 +24,7 @@ function loadInitialBoardData() {
 
 // The default board a first-time visitor sees.
 function defaultWidgets() {
-  const mk = (type, x, y, w, h) => {
-    const m = widgetMeta(type).layout
-    return {
-      id: uid('w'),
-      type,
-      settings: {},
-      layout: { x, y, w: w ?? m.w, h: h ?? m.h },
-    }
-  }
-  // A balanced 12-col starting board: top status row, a big calendar beside a
-  // task column, then a full-width bottom row so columns end evenly (no big
-  // holes). Users can rearrange freely from here.
-  return [
-    mk('clock', 0, 0, 3, 4),
-    mk('weather', 3, 0, 3, 4),
-    mk('stats', 6, 0, 3, 4),
-    mk('pomodoro', 9, 0, 3, 5),
-    mk('calendar', 0, 4, 6, 8),
-    mk('tasks', 6, 4, 3, 8),
-    mk('habits', 9, 5, 3, 7),
-    mk('links', 0, 12, 6, 5),
-    mk('notes', 6, 12, 6, 5),
-  ]
+  return instantiate(templateById('productivity'))
 }
 
 export function DashboardProvider({ children }) {
@@ -53,6 +33,12 @@ export function DashboardProvider({ children }) {
   const [wallpaper, setWallpaper] = usePersistentState('wallpaper', 'aurora')
   const [userName, setUserName] = usePersistentState('userName', '')
   const [notifyEnabled, setNotifyEnabled] = usePersistentState('notify', false)
+  const [density, setDensity] = usePersistentState('density', 'cozy')
+  const [font, setFont] = usePersistentState('font', 'default')
+  // Uploaded (data: URL) or linked wallpaper image, used when wallpaper === 'image'.
+  const [wallpaperImage, setWallpaperImage] = usePersistentState('wallpaperImage', '')
+  const [wallpaperDim, setWallpaperDim] = usePersistentState('wallpaperDim', 35)
+  const [wallpaperBlur, setWallpaperBlur] = usePersistentState('wallpaperBlur', 0)
   const [editMode, setEditMode] = useState(false)
 
   // Multiple boards. Widgets for every board live in one object keyed by board id.
@@ -86,8 +72,18 @@ export function DashboardProvider({ children }) {
     const root = document.documentElement
     root.dataset.theme = theme
     root.dataset.accent = accent
-    root.dataset.wallpaper = wallpaper
-  }, [theme, accent, wallpaper])
+    root.dataset.wallpaper = wallpaper === 'image' && !wallpaperImage ? 'aurora' : wallpaper
+    root.dataset.density = density
+    root.style.setProperty('--font', fontStack(font))
+  }, [theme, accent, wallpaper, wallpaperImage, density, font])
+
+  useEffect(() => {
+    const root = document.documentElement
+    if (wallpaperImage) root.style.setProperty('--wp-image', `url("${wallpaperImage.replace(/"/g, '%22')}")`)
+    else root.style.removeProperty('--wp-image')
+    root.style.setProperty('--wp-dim', String(Math.min(90, Math.max(0, wallpaperDim)) / 100))
+    root.style.setProperty('--wp-blur', `${Math.min(30, Math.max(0, wallpaperBlur))}px`)
+  }, [wallpaperImage, wallpaperDim, wallpaperBlur])
 
   const addWidget = useCallback(
     (type, settings = {}) => {
@@ -141,10 +137,10 @@ export function DashboardProvider({ children }) {
   const switchBoard = useCallback((id) => setActiveBoardId(id), [setActiveBoardId])
 
   const addBoard = useCallback(
-    (name = 'New board', icon = '🗂️') => {
+    (name = 'New board', icon = '🗂️', boardWidgets = []) => {
       const id = uid('board')
       setBoards((prev) => [...prev, { id, name, icon }])
-      setWidgetsByBoard((prev) => ({ ...prev, [id]: [] }))
+      setWidgetsByBoard((prev) => ({ ...prev, [id]: boardWidgets }))
       setActiveBoardId(id)
       return id
     },
@@ -172,12 +168,42 @@ export function DashboardProvider({ children }) {
     [setBoards, setWidgetsByBoard, activeBoardId, setActiveBoardId],
   )
 
+  // ---- Layout templates ----
+  const [userTemplates, setUserTemplates] = usePersistentState('templates', [])
+
+  const applyTemplate = useCallback(
+    (id) => {
+      const tpl = templateById(id, userTemplates)
+      if (tpl) setWidgets(instantiate(tpl))
+    },
+    [userTemplates, setWidgets],
+  )
+
+  const saveTemplate = useCallback(
+    (name, icon) => {
+      const tpl = templateFromWidgets(name, icon, widgets)
+      setUserTemplates((prev) => [...prev, tpl])
+      return tpl
+    },
+    [widgets, setUserTemplates],
+  )
+
+  const deleteTemplate = useCallback(
+    (id) => setUserTemplates((prev) => prev.filter((t) => t.id !== id)),
+    [setUserTemplates],
+  )
+
   const value = {
     theme, setTheme,
     accent, setAccent,
     wallpaper, setWallpaper,
     userName, setUserName,
     notifyEnabled, setNotifyEnabled,
+    density, setDensity,
+    font, setFont,
+    wallpaperImage, setWallpaperImage,
+    wallpaperDim, setWallpaperDim,
+    wallpaperBlur, setWallpaperBlur,
     widgets, setWidgets,
     editMode, setEditMode,
     addWidget, removeWidget, updateWidget, applyLayout, resetBoard,
@@ -185,6 +211,7 @@ export function DashboardProvider({ children }) {
     types: WIDGET_TYPES,
     // boards
     boards, activeBoardId: boardId, switchBoard, addBoard, renameBoard, removeBoard,
+    userTemplates, applyTemplate, saveTemplate, deleteTemplate,
     // shared stores
     events, setEvents,
     calendars, setCalendars,

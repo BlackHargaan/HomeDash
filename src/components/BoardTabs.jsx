@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { useDashboard } from '../context/DashboardContext.jsx'
+import TemplateModal from './TemplateModal.jsx'
 
 export default function BoardTabs() {
-  const { boards, activeBoardId, switchBoard, addBoard, renameBoard, removeBoard, editMode } = useDashboard()
+  const { boards, activeBoardId, switchBoard, renameBoard, removeBoard, editMode } = useDashboard()
   const [renaming, setRenaming] = useState(null)
   const [draft, setDraft] = useState('')
+  const [creating, setCreating] = useState(false)
 
   function startRename(b) {
     setRenaming(b.id)
@@ -50,16 +52,10 @@ export default function BoardTabs() {
           )}
         </div>
       ))}
-      <button
-        className="boardtab-add"
-        title="New board"
-        onClick={() => {
-          const name = prompt('Name this board:', 'Work')
-          if (name && name.trim()) addBoard(name.trim())
-        }}
-      >
+      <button className="boardtab-add" title="New board" aria-label="New board" onClick={() => setCreating(true)}>
         ＋
       </button>
+      {creating && <TemplateModal mode="new" onClose={() => setCreating(false)} />}
     </div>
   )
 }

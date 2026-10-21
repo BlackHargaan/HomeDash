@@ -284,7 +284,7 @@ body { background: var(--bg); }
 .flow {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 16px;
+  gap: var(--gap);
   align-items: start;
 }
 .flow-item { min-width: 0; }
@@ -447,3 +447,77 @@ textarea.input { resize: vertical; min-height: 60px; line-height: 1.5; }
 .desk-mode .faint { font-size: 12px; }
 .update-badge { border-color: var(--accent); color: var(--accent); }
 .desk-first { padding-bottom: 16px; margin-bottom: 16px; border-bottom: 1px solid var(--line); }
+
+/* ============================================================
+   Personalization: density, image wallpaper, per-widget styles
+   ============================================================ */
+:root[data-density='compact'] { --gap: 10px; --radius: 14px; --pad: 10px; }
+:root[data-density='cozy'] { --gap: 16px; --pad: 14px; }
+:root[data-density='comfortable'] { --gap: 22px; --radius: 24px; --pad: 18px; }
+:root[data-density='compact'] .widget-head { padding: 8px var(--pad) 4px; }
+:root[data-density='compact'] .widget-body { padding: 2px var(--pad) var(--pad); }
+:root[data-density='comfortable'] .widget-head { padding: 16px var(--pad) 10px; }
+:root[data-density='comfortable'] .widget-body { padding: 4px var(--pad) var(--pad); }
+:root[data-density='compact'] .topbar { margin-bottom: 12px; }
+
+/* Uploaded / linked image. A fixed layer (oversized so blurred edges stay
+   hidden) with a theme-colored scrim on top for legibility. */
+:root[data-wallpaper='image'] body { background: var(--bg); }
+:root[data-wallpaper='image'] .wallpaper {
+  display: block; position: fixed; inset: -40px; z-index: -1; pointer-events: none;
+  background: var(--wp-image) center / cover no-repeat;
+  filter: blur(var(--wp-blur, 0px));
+}
+:root[data-wallpaper='image'] .wallpaper::after {
+  content: ''; position: absolute; inset: 0; background: var(--bg); opacity: var(--wp-dim, 0.35);
+}
+
+/* Card variants (widget.settings.style.variant) */
+.widget[data-variant='solid'] { background: var(--card-solid); backdrop-filter: none; -webkit-backdrop-filter: none; }
+.widget[data-variant='clear'] { background: transparent; border-color: transparent; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
+.widget[data-variant='outline'] { background: transparent; border-color: color-mix(in srgb, var(--accent) 55%, transparent); box-shadow: none; backdrop-filter: blur(6px); }
+.widget[data-tinted='true'] { background: color-mix(in srgb, var(--accent) 12%, var(--card)); border-color: color-mix(in srgb, var(--accent) 30%, var(--card-border)); }
+.widget.no-title:not(.is-edit) .widget-head { display: none; }
+.widget.no-title:not(.is-edit) .widget-body { padding-top: var(--pad, 14px); }
+
+.wstyle-pop {
+  position: absolute; top: 40px; right: 8px; z-index: 40; width: 230px;
+  background: var(--card-solid); border: 1px solid var(--card-border); border-radius: 12px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45); padding: 10px; display: flex; flex-direction: column; gap: 8px; font-size: 12px;
+}
+.wstyle-pop label { font-size: 11px; color: var(--text-faint); font-weight: 600; }
+.wstyle-pop .chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.swatch.auto { background: conic-gradient(#8b93ff, #b98bff, #5ad4e6, #4fd1a5, #f6c667, #ff8fab, #8b93ff); }
+
+/* Appearance settings */
+.wp-preview {
+  width: 120px; height: 68px; border-radius: 10px; border: 1px solid var(--card-border); flex: 0 0 auto;
+  background: var(--bg) center / cover no-repeat;
+}
+.range-row { display: flex; align-items: center; gap: 10px; font-size: 12px; }
+.range-row input[type=range] { flex: 1; accent-color: var(--accent); }
+.range-row span:first-child { width: 42px; color: var(--text-dim); }
+.range-row span:last-child { width: 36px; text-align: right; color: var(--text-faint); }
+.font-chip { font-size: 13px; }
+
+/* Board templates */
+.tpl-name-row { align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
+.tpl-icons { display: flex; flex-wrap: wrap; gap: 4px; flex: 0 0 auto !important; }
+.tpl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
+.tpl-card {
+  position: relative; text-align: left; padding: 10px; border-radius: 14px; cursor: pointer;
+  background: var(--input); border: 1px solid var(--card-border); color: var(--text); transition: border-color 0.12s, transform 0.12s;
+}
+.tpl-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+.tpl-card.on { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+.tpl-preview { position: relative; height: 92px; border-radius: 8px; background: var(--bg-2); margin-bottom: 8px; overflow: hidden; }
+.tpl-box {
+  position: absolute; box-sizing: border-box; border: 2px solid var(--bg-2); border-radius: 6px;
+  background: color-mix(in srgb, var(--accent) 22%, var(--card-solid)); display: grid; place-items: center; font-size: 11px;
+}
+.tpl-name { font-weight: 700; font-size: 13px; display: flex; align-items: center; gap: 6px; }
+.tpl-mine { font-size: 9.5px; font-weight: 800; text-transform: uppercase; color: var(--accent); letter-spacing: 0.06em; }
+.tpl-desc { font-size: 11.5px; color: var(--text-dim); margin-top: 2px; line-height: 1.35; }
+.tpl-del { top: 6px; right: 6px; }
+.tpl-card:hover .tpl-del { opacity: 1; }
+.push-box { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--input); }
