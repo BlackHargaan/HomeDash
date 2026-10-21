@@ -1,7 +1,9 @@
 name: Desktop release
 
-# Push a version tag to publish desktop installers:
-#   git tag v0.2.0 && git push origin v0.2.0
+# Publish desktop installers, either way:
+#   - push a version tag:   git tag v0.2.0 && git push origin v0.2.0
+#   - or Actions → "Desktop release" → Run workflow, enter v0.2.0 (the tag is
+#     created on the branch you pick if it doesn't exist yet)
 # Builds Windows (.exe), macOS (.dmg, Intel + Apple Silicon) and Linux
 # (.AppImage) on GitHub's machines and attaches them — plus the update metadata
 # the in-app Update button reads — to a GitHub Release for that tag.
@@ -11,7 +13,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Existing tag to (re)build, e.g. v0.2.0'
+        description: 'Version tag, e.g. v0.2.0 — created from the selected branch if it does not exist'
         required: true
 
 permissions:
@@ -25,12 +27,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Create the release (if it doesn't exist yet)
+      - name: Create the release (and the tag, for manual runs)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          case "$TAG" in v[0-9]*.[0-9]*.[0-9]*) ;; *) echo "Tag must look like v1.2.3, got '$TAG'"; exit 1 ;; esac
           gh release view "$TAG" >/dev/null 2>&1 || \
-            gh release create "$TAG" --title "HomeDash $TAG" --generate-notes --verify-tag
+            gh release create "$TAG" --target "$GITHUB_SHA" --title "HomeDash $TAG" --generate-notes
 
   build:
     needs: create-release

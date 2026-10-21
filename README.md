@@ -128,7 +128,9 @@ firing (turn this off in Settings), and can open at sign-in on Windows/macOS.
 **Restart & update** installs it in place. macOS builds aren't signed yet, so
 there the button opens the download page instead.
 
-**Publishing a release** (maintainers): bump nothing by hand — just push a tag:
+**Publishing a release** (maintainers): bump nothing by hand. Either open
+**Actions → Desktop release → Run workflow** and enter a version like `v0.2.0`
+(the tag is created for you), or push a tag:
 
 ```bash
 git tag v0.2.0
