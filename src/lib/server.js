@@ -46,6 +46,11 @@ export const serverApi = {
   status: (targets) => api('/api/status', { method: 'POST', body: { targets } }),
   containers: () => api('/api/docker/containers'),
   restart: (id) => api(`/api/docker/containers/${encodeURIComponent(id)}/restart`, { method: 'POST' }),
+  pushInfo: (endpoint) => api(`/api/push${endpoint ? `?endpoint=${encodeURIComponent(endpoint)}` : ''}`),
+  pushSubscribe: (subscription, label) => api('/api/push/subscribe', { method: 'POST', body: { subscription, label } }),
+  pushUnsubscribe: (endpoint) => api('/api/push/unsubscribe', { method: 'POST', body: { endpoint } }),
+  pushSchedule: (items) => api('/api/push/schedule', { method: 'PUT', body: { items } }),
+  pushTest: (endpoint) => api('/api/push/test', { method: 'POST', body: { endpoint } }),
 }
 
 // fetch() that goes through the server's proxy when one is available, so feeds

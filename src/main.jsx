@@ -8,6 +8,9 @@ import 'react-grid-layout/css/styles.css'
 import 'react-resizable/css/styles.css'
 import './styles/index.css'
 import './styles/widgets.css'
+import { registerServiceWorker } from './lib/pwa.js'
+
+registerServiceWorker()
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

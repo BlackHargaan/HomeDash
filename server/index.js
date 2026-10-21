@@ -8,6 +8,7 @@
 //   HOMEDASH_PASSWORD        optional; require sign-in when set
 //   HOMEDASH_DOCKER_CONTROL  "true" to allow restarting containers
 //   DOCKER_SOCKET            default /var/run/docker.sock
+//   HOMEDASH_PUSH_SUBJECT    contact for push services (mailto: or https: URL)
 import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -24,6 +25,7 @@ const app = await startServer({
   password: process.env.HOMEDASH_PASSWORD || '',
   dockerControl: process.env.HOMEDASH_DOCKER_CONTROL === 'true',
   dockerSocket: process.env.DOCKER_SOCKET,
+  pushSubject: process.env.HOMEDASH_PUSH_SUBJECT,
   version,
   logger: (level, ...args) => (level === 'error' ? console.error : console.log)(...args),
 })

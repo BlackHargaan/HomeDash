@@ -18,10 +18,17 @@ export async function requestNotifyPermission() {
   }
 }
 
-export function fireNotification(title, body) {
+// `tag` collapses duplicates (e.g. the same reminder from the page and from a
+// server push). Prefer the service worker when one controls the page: it also
+// works where `new Notification()` is disallowed (Android Chrome).
+export function fireNotification(title, body, tag) {
   if (!notifySupported() || Notification.permission !== 'granted') return
+  if (typeof navigator !== 'undefined' && navigator.serviceWorker?.controller) {
+    navigator.serviceWorker.controller.postMessage({ type: 'notify', title, body, tag })
+    return
+  }
   try {
-    new Notification(title, { body, silent: false })
+    new Notification(title, { body, tag, silent: false })
   } catch {
     /* some browsers require a ServiceWorker for notifications; ignore. */
   }

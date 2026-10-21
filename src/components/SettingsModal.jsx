@@ -2,33 +2,24 @@ import { useRef, useState } from 'react'
 import { useDashboard } from '../context/DashboardContext.jsx'
 import { ACCENTS } from '../widgets/registry.js'
 import { exportAllData, importAllData } from '../lib/storage.js'
-import { requestNotifyPermission, notifyPermission, notifySupported } from '../lib/notify.js'
 import CloudSyncPanel from './CloudSyncPanel.jsx'
 import ServerPanel from './ServerPanel.jsx'
 import DesktopPanel from './DesktopPanel.jsx'
 import { desktop } from '../lib/desktop.js'
 import Modal from './Modal.jsx'
-
-const WALLPAPERS = [
-  { id: 'aurora', label: 'Aurora' },
-  { id: 'mesh', label: 'Mesh' },
-  { id: 'grid', label: 'Grid' },
-  { id: 'plain', label: 'Plain' },
-]
+import AppearancePanel from './AppearancePanel.jsx'
+import TemplateModal from './TemplateModal.jsx'
+import NotificationsPanel from './NotificationsPanel.jsx'
+import InstallPanel from './InstallPanel.jsx'
 
 export default function SettingsModal({ onClose }) {
   const {
-    theme, setTheme, accent, setAccent, wallpaper, setWallpaper,
-    userName, setUserName, resetBoard, notifyEnabled, setNotifyEnabled,
+    theme, setTheme, accent, setAccent,
+    userName, setUserName, resetBoard,
   } = useDashboard()
   const fileRef = useRef(null)
   const [restoreMsg, setRestoreMsg] = useState(null)
-
-  async function toggleNotify() {
-    if (notifyEnabled) { setNotifyEnabled(false); return }
-    const perm = await requestNotifyPermission()
-    setNotifyEnabled(perm === 'granted')
-  }
+  const [showTemplates, setShowTemplates] = useState(false)
 
   function backup() {
     const blob = new Blob([JSON.stringify(exportAllData(), null, 2)], { type: 'application/json' })
@@ -93,33 +84,11 @@ export default function SettingsModal({ onClose }) {
         </div>
       </div>
 
-      <div className="field">
-        <label>Wallpaper</label>
-        <div className="row" style={{ flexWrap: 'wrap' }}>
-          {WALLPAPERS.map((w) => (
-            <button key={w.id} className={`chip ${wallpaper === w.id ? 'on' : ''}`} onClick={() => setWallpaper(w.id)}>
-              {w.label}
-            </button>
-          ))}
-        </div>
-      </div>
+      <AppearancePanel />
 
-      <div className="field">
-        <label>Notifications</label>
-        {notifySupported() ? (
-          <>
-            <button className={`chip ${notifyEnabled ? 'on' : ''}`} onClick={toggleNotify} style={{ alignSelf: 'flex-start' }}>
-              {notifyEnabled ? '🔔 Reminders on' : '🔕 Enable reminders'}
-            </button>
-            <span className="faint" style={{ fontSize: 12 }}>
-              Get a browser alert before timed events and when tasks are due today.
-              {notifyPermission() === 'denied' && ' Notifications are blocked in your browser settings.'}
-            </span>
-          </>
-        ) : (
-          <span className="faint" style={{ fontSize: 12 }}>This browser doesn’t support notifications.</span>
-        )}
-      </div>
+      <NotificationsPanel />
+
+      <InstallPanel />
 
       <div className="field" style={{ marginTop: 20, borderTop: '1px solid var(--line)', paddingTop: 16 }}>
         <label>Backup &amp; restore</label>
@@ -140,19 +109,26 @@ export default function SettingsModal({ onClose }) {
       <CloudSyncPanel />
 
       <div className="field" style={{ marginTop: 20, borderTop: '1px solid var(--line)', paddingTop: 16 }}>
-        <label>Danger zone</label>
-        <button
-          className="btn danger ghost"
-          onClick={() => {
-            if (confirm('Reset the board to the default layout? Your widgets will be rearranged (data like tasks and events is kept).')) {
-              resetBoard()
-              onClose()
-            }
-          }}
-        >
-          ↺ Reset board layout
-        </button>
+        <label>Board layout</label>
+        <p className="faint" style={{ fontSize: 12, margin: '0 0 8px' }}>
+          Switch this board to a ready-made layout (Planner, Homelab, Student…), or save it as your own template for new boards.
+        </p>
+        <div className="row" style={{ flexWrap: 'wrap' }}>
+          <button className="btn" onClick={() => setShowTemplates(true)}>▦ Templates…</button>
+          <button
+            className="btn danger ghost"
+            onClick={() => {
+              if (confirm('Reset the board to the default layout? Your widgets will be rearranged (data like tasks and events is kept).')) {
+                resetBoard()
+                onClose()
+              }
+            }}
+          >
+            ↺ Reset board layout
+          </button>
+        </div>
       </div>
+      {showTemplates && <TemplateModal mode="apply" onClose={() => setShowTemplates(false)} onDone={() => { setShowTemplates(false); onClose() }} />}
     </Modal>
   )
 }

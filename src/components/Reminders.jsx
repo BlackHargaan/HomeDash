@@ -1,61 +1,55 @@
 import { useEffect, useRef } from 'react'
 import { useDashboard } from '../context/DashboardContext.jsx'
-import { collectOccurrences } from '../lib/recurrence.js'
+import { useServer } from '../context/ServerContext.jsx'
 import { readStore, writeStore } from '../lib/storage.js'
 import { fireNotification, notifyPermission } from '../lib/notify.js'
-import { toDateKey, fmtTime } from '../lib/date.js'
+import { reminderSchedule, dueNow, pruneFired } from '../lib/reminders.js'
+import { serverApi } from '../lib/server.js'
+import { pushEndpoint } from '../lib/push.js'
 
-// Headless component: while notifications are enabled, polls every 30s and
-// fires a browser notification for (a) timed events entering their reminder
-// lead-time window and (b) tasks due today. Fired ids are remembered for the
-// day so nothing double-fires across polls or reloads.
+const FIRED = 'sync:reminderFired' // device-local: each device notifies for itself
+const UPLOAD_DEBOUNCE_MS = 4000
+const UPLOAD_EVERY_MS = 6 * 3600 * 1000
+
+// Headless component.
+//  • While reminders are on, checks every 30 s and shows a notification for
+//    timed events entering their reminder window and tasks due today — unless
+//    this device gets them as server pushes instead.
+//  • With the HomeDash server, uploads the coming week's reminders so the
+//    server can push them to subscribed devices when no tab is open.
 export default function Reminders() {
-  const { events, tasks, notifyEnabled } = useDashboard()
-  const eventsRef = useRef(events)
-  const tasksRef = useRef(tasks)
-  eventsRef.current = events
-  tasksRef.current = tasks
+  const { events, tasks, calendars, notifyEnabled } = useDashboard()
+  const { status } = useServer()
+  const data = useRef({ events, tasks, calendars })
+  data.current = { events, tasks, calendars }
 
   useEffect(() => {
     if (!notifyEnabled || notifyPermission() !== 'granted') return
-
     const check = () => {
+      if (pushEndpoint()) return
       const now = Date.now()
-      const today = toDateKey(new Date())
-      let fired = readStore('reminderFired', { day: today, ids: {} })
-      if (fired.day !== today) fired = { day: today, ids: {} }
-
-      const dayStart = new Date(); dayStart.setHours(0, 0, 0, 0)
-      const dayEnd = new Date(); dayEnd.setHours(23, 59, 59, 999)
-
-      for (const inst of collectOccurrences(eventsRef.current, dayStart, dayEnd)) {
-        if (inst.allDay) continue
-        const lead = typeof inst.reminderMinutes === 'number' ? inst.reminderMinutes : null
-        if (lead == null) continue
-        const startMs = new Date(inst.start).getTime()
-        const key = 'e:' + inst.id
-        if (now >= startMs - lead * 60000 && now < startMs && !fired.ids[key]) {
-          fireNotification(inst.title, lead === 0 ? 'Starting now' : `Starts at ${fmtTime(inst.start)} (in ~${lead} min)`)
-          fired.ids[key] = true
-        }
+      let fired = pruneFired(readStore(FIRED, {}), now)
+      for (const r of dueNow(reminderSchedule({ ...data.current, from: new Date(now), days: 1 }), fired, now)) {
+        fireNotification(r.title, r.body, r.tag)
+        fired = { ...fired, [r.key]: now }
       }
-
-      for (const t of tasksRef.current) {
-        if (t.done || t.due !== today) continue
-        const key = 't:' + t.id
-        if (!fired.ids[key]) {
-          fireNotification('Task due today', t.title)
-          fired.ids[key] = true
-        }
-      }
-
-      writeStore('reminderFired', fired)
+      writeStore(FIRED, fired)
     }
-
     check()
     const iv = setInterval(check, 30000)
     return () => clearInterval(iv)
   }, [notifyEnabled])
+
+  useEffect(() => {
+    if (status !== 'ready') return
+    const upload = () => {
+      const items = notifyEnabled ? reminderSchedule({ ...data.current, from: new Date(), days: 7 }) : []
+      serverApi.pushSchedule(items).catch(() => { /* older server or offline; try again later */ })
+    }
+    const t = setTimeout(upload, UPLOAD_DEBOUNCE_MS)
+    const iv = setInterval(upload, UPLOAD_EVERY_MS)
+    return () => { clearTimeout(t); clearInterval(iv) }
+  }, [status, notifyEnabled, events, tasks, calendars])
 
   return null
 }

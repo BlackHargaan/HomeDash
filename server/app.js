@@ -9,6 +9,11 @@
 //   POST /api/status {targets}       reachability + latency for each URL
 //   GET  /api/docker/containers      container list (needs the Docker socket)
 //   POST /api/docker/containers/:id/restart   (needs dockerControl)
+//   GET  /api/push[?endpoint=…]      VAPID public key + subscription info
+//   POST /api/push/subscribe {subscription, label}
+//   POST /api/push/unsubscribe {endpoint}
+//   PUT  /api/push/schedule {items}  reminders to push when they come due
+//   POST /api/push/test {endpoint}   send a test notification
 //
 // Zero dependencies — only Node built-ins — so the same module can run inside
 // the Docker image and be embedded in the desktop app.
@@ -17,6 +22,7 @@ import https from 'node:https'
 import crypto from 'node:crypto'
 import { createReadStream, existsSync } from 'node:fs'
 import { mkdir, readFile, rename, stat, writeFile } from 'node:fs/promises'
+import { createPushService } from './push.js'
 import { extname, join, resolve, sep } from 'node:path'
 
 const MIME = {
@@ -48,10 +54,12 @@ export async function startServer(opts = {}) {
   const dockerControl = !!opts.dockerControl
   const version = opts.version || '0.0.0'
   const log = opts.logger ?? (() => {})
+  const pushSubject = opts.pushSubject || 'https://github.com/BlackHargaan/HomeDash'
 
   await mkdir(dataDir, { recursive: true })
   const secret = await loadSecret(dataDir)
   const store = createStore(dataDir)
+  const push = await createPushService({ dataDir, subject: pushSubject, log, allowHttp: !!opts.allowInsecurePush })
   // Deterministic per (server secret, password): changing the password signs
   // everyone out.
   const sessionToken = password ? hmac(secret, `session:${password}`) : null
@@ -156,6 +164,26 @@ export async function startServer(opts = {}) {
       return json(res, 502, { error: `Docker API returned ${r.status}` })
     }
 
+    if (path === '/api/push' && method === 'GET') {
+      return json(res, 200, push.info(url.searchParams.get('endpoint') || undefined))
+    }
+    if (path === '/api/push/subscribe' && method === 'POST') {
+      const body = await readJson(req)
+      return json(res, 200, await push.subscribe(body?.subscription, body?.label))
+    }
+    if (path === '/api/push/unsubscribe' && method === 'POST') {
+      const body = await readJson(req)
+      return json(res, 200, await push.unsubscribe(String(body?.endpoint || '')))
+    }
+    if (path === '/api/push/schedule' && method === 'PUT') {
+      const body = await readJson(req)
+      return json(res, 200, await push.setSchedule(body?.items))
+    }
+    if (path === '/api/push/test' && method === 'POST') {
+      const body = await readJson(req)
+      return json(res, 200, await push.test(body?.endpoint ? String(body.endpoint) : undefined))
+    }
+
     return json(res, 404, { error: 'Not found' })
   }
 
@@ -209,7 +237,8 @@ export async function startServer(opts = {}) {
   return {
     server,
     port: actualPort,
-    close: () => new Promise((ok) => server.close(() => ok())),
+    push,
+    close: () => { push.stop(); return new Promise((ok) => server.close(() => ok())) },
   }
 }
 

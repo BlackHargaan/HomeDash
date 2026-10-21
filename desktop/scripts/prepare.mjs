@@ -20,7 +20,11 @@ cpSync(dist, join(desktop, 'web'), { recursive: true })
 // The server is an ES module; .mjs keeps it one without a package.json beside it.
 rmSync(join(desktop, 'server'), { recursive: true, force: true })
 mkdirSync(join(desktop, 'server'), { recursive: true })
-cpSync(join(root, 'server', 'app.js'), join(desktop, 'server', 'app.mjs'))
+// Each server file becomes .mjs, with its relative imports renamed to match.
+for (const name of ['app', 'push']) {
+  const src = readFileSync(join(root, 'server', `${name}.js`), 'utf8')
+  writeFileSync(join(desktop, 'server', `${name}.mjs`), src.replace(/from '\.\/(\w+)\.js'/g, "from './$1.mjs'"))
+}
 
 const rootPkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'))
 const pkgFile = join(desktop, 'package.json')

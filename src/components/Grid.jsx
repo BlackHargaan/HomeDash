@@ -3,6 +3,7 @@ import GridLayout, { WidthProvider } from 'react-grid-layout'
 import { useDashboard } from '../context/DashboardContext.jsx'
 import { widgetMeta } from '../widgets/registry.js'
 import { useMediaQuery } from '../lib/useMediaQuery.js'
+import { densityOf } from '../lib/appearance.js'
 import { WIDGET_COMPONENTS } from '../widgets/index.js'
 import WidgetShell from './WidgetShell.jsx'
 import FlowLayout from './FlowLayout.jsx'
@@ -20,7 +21,8 @@ export default function Grid() {
 }
 
 function BentoGrid() {
-  const { widgets, editMode, applyLayout } = useDashboard()
+  const { widgets, editMode, applyLayout, density } = useDashboard()
+  const spacing = densityOf(density)
   // A ref keeps the initial render honest even before the first change event.
   const first = useRef(true)
 
@@ -42,8 +44,8 @@ function BentoGrid() {
       className={`layout ${editMode ? 'edit' : ''}`}
       layout={layout}
       cols={12}
-      rowHeight={68}
-      margin={[16, 16]}
+      rowHeight={spacing.rowHeight}
+      margin={[spacing.margin, spacing.margin]}
       containerPadding={[0, 0]}
       isDraggable={editMode}
       isResizable={editMode}
