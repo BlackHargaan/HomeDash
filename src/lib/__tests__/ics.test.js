@@ -85,3 +85,11 @@ describe('eventsToICS', () => {
     expect(again[0].recurrence).toMatchObject({ freq: 'DAILY', count: 5 })
   })
 })
+
+describe('icsCalendarName', () => {
+  it('reads X-WR-CALNAME, or returns null', async () => {
+    const { icsCalendarName } = await import('../ics.js')
+    expect(icsCalendarName('BEGIN:VCALENDAR\r\nX-WR-CALNAME:Work\\, Team\r\nEND:VCALENDAR')).toBe('Work, Team')
+    expect(icsCalendarName('BEGIN:VCALENDAR\nEND:VCALENDAR')).toBeNull()
+  })
+})

@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useDashboard } from '../context/DashboardContext.jsx'
 import { collectOccurrences } from '../lib/recurrence.js'
+import { isVisible, eventColor } from './calendar/helpers.js'
 import { fromDateKey, toDateKey, fmtTime, isSameDay } from '../lib/date.js'
 
 // A "hero" summary of the day: the next thing on the calendar, the tasks that
 // matter, and which habits still need doing. Pulls live from the shared stores.
 export default function TodayWidget() {
-  const { events, tasks, habits, userName } = useDashboard()
+  const { events, tasks, habits, userName, calendars } = useDashboard()
   const [now, setNow] = useState(new Date())
 
   useEffect(() => {
@@ -18,9 +19,10 @@ export default function TodayWidget() {
   const dayEnd = new Date(now); dayEnd.setHours(23, 59, 59, 999)
 
   const todaysEvents = useMemo(
-    () => collectOccurrences(events, dayStart, dayEnd),
+    () => collectOccurrences(events.filter((e) => isVisible(e, calendars)), dayStart, dayEnd)
+      .map((e) => ({ ...e, color: eventColor(e, calendars) })),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [events, toDateKey(now)],
+    [events, calendars, toDateKey(now)],
   )
   const upcomingEvents = todaysEvents.filter((e) => e.allDay || new Date(e.end || e.start) >= now)
   const nextEvent = upcomingEvents.find((e) => !e.allDay)
