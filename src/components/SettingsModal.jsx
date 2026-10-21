@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useDashboard } from '../context/DashboardContext.jsx'
 import { ACCENTS } from '../widgets/registry.js'
 import { exportAllData, importAllData } from '../lib/storage.js'
@@ -11,8 +11,9 @@ import AppearancePanel from './AppearancePanel.jsx'
 import TemplateModal from './TemplateModal.jsx'
 import NotificationsPanel from './NotificationsPanel.jsx'
 import InstallPanel from './InstallPanel.jsx'
+import AiPanel from './AiPanel.jsx'
 
-export default function SettingsModal({ onClose }) {
+export default function SettingsModal({ onClose, section }) {
   const {
     theme, setTheme, accent, setAccent,
     userName, setUserName, resetBoard,
@@ -20,6 +21,10 @@ export default function SettingsModal({ onClose }) {
   const fileRef = useRef(null)
   const [restoreMsg, setRestoreMsg] = useState(null)
   const [showTemplates, setShowTemplates] = useState(false)
+
+  useEffect(() => {
+    if (section) setTimeout(() => document.getElementById(`settings-${section}`)?.scrollIntoView({ block: 'start', behavior: 'smooth' }), 60)
+  }, [section])
 
   function backup() {
     const blob = new Blob([JSON.stringify(exportAllData(), null, 2)], { type: 'application/json' })
@@ -89,6 +94,8 @@ export default function SettingsModal({ onClose }) {
       <NotificationsPanel />
 
       <InstallPanel />
+
+      <AiPanel />
 
       <div className="field" style={{ marginTop: 20, borderTop: '1px solid var(--line)', paddingTop: 16 }}>
         <label>Backup &amp; restore</label>

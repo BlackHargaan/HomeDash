@@ -20,7 +20,7 @@ export function reminderSchedule({ events = [], tasks = [], calendars, from = ne
   for (const inst of collectOccurrences(visible, new Date(start.getTime() - 3 * 3600000), end)) {
     if (inst.allDay || typeof inst.reminderMinutes !== 'number') continue
     const startMs = new Date(inst.start).getTime()
-    if (startMs <= start.getTime()) continue
+    if (startMs <= start.getTime() || startMs > end.getTime()) continue
     const lead = Math.max(0, inst.reminderMinutes)
     const key = `e:${inst.seriesId || inst.id}:${new Date(inst.start).toISOString()}`
     out.push({

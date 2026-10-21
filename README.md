@@ -87,6 +87,36 @@ fetching and homelab service checks. No accounts, no tracking.
   response time (self-signed HTTPS supported).
 - **Docker** — your containers and their state, with optional restart buttons.
 
+### ✨ AI assistant & MCP
+
+Needs the HomeDash server (Docker, the desktop app or `npm start`). Set it up in
+**Settings → AI assistant**.
+
+- **Assistant chat** — open it with the ✨ button, <kbd>⌘/Ctrl</kbd>+<kbd>J</kbd>,
+  ⌘K → *Ask…*, or add the **Assistant** widget. Ask "what's on this week?",
+  "move my dentist appointment to Friday at 3", "add milk and eggs to my
+  groceries page", "plan a workout every Mon/Wed/Fri at 7am". It reads and
+  changes your events (including recurring ones), tasks, habits, kanban cards,
+  notebook pages, bookmarks and widgets, and every change shows up live with an
+  **Undo** button. Deleting or overwriting anything — or more than five changes
+  at once — waits for you to **Allow** it.
+- **Claude** (default) — paste an Anthropic API key (stored on your server only,
+  never sent to the browser) or set `ANTHROPIC_API_KEY`. Choose Claude Opus 5.5
+  (default), Sonnet 5.5 or Haiku 5.5 and how hard it should think. Usage is
+  billed to your Anthropic account.
+- **Local model** — point it at [Ollama](https://ollama.com) on your network
+  (`HOMEDASH_OLLAMA_URL` or Settings) and pick a model with tool support
+  (e.g. Qwen 3, Llama 3.1+). Nothing leaves your network; small models are less
+  reliable at multi-step changes.
+- **MCP server** — HomeDash also speaks the
+  [Model Context Protocol](https://modelcontextprotocol.io) at `/mcp`, so
+  Claude Desktop, Claude Code and other MCP clients can use your dashboard
+  ("add a task to HomeDash to renew my passport"). Create a token per app in
+  Settings (optionally read-only); the panel shows copy-paste setup for Claude
+  Code (`claude mcp add --transport http …`) and Claude Desktop (via
+  `mcp-remote`). Changes land in the server's copy and appear in open tabs on
+  their next sync.
+
 ### 💾 Sync & backup
 
 - **With the HomeDash server** (Docker image, `npm start`, or the Windows
@@ -213,6 +243,8 @@ a hostname, just like Homarr/homepage.
 |---|---|
 | `HOMEDASH_PASSWORD` | Require a password to open the dashboard. **Set this before exposing HomeDash outside your home network** — the server's fetch proxy and status checks can reach anything on your LAN. |
 | `HOMEDASH_DOCKER_CONTROL=true` | Allow restart buttons in the Docker widget. |
+| `ANTHROPIC_API_KEY` | API key for the AI assistant (alternatively paste it in Settings → AI assistant). |
+| `HOMEDASH_OLLAMA_URL` | Default address of an Ollama server for the local-model assistant, e.g. `http://192.168.1.10:11434`. |
 | `HOMEDASH_PUSH_SUBJECT` | Contact the push services see for your server (`mailto:you@example.com` or a URL). Optional. |
 | `PORT`, `DATA_DIR`, `DOCKER_SOCKET` | Override the listen port (80 in the image), data folder (`/data`) or socket path. |
 
@@ -225,7 +257,9 @@ do it if you want that widget.
 **API:** `/api/health`, `/api/state` (sync), `/api/proxy?url=` (server-side
 fetch), `/api/status` (reachability checks), `/api/docker/*`, `/api/push/*`
 (Web Push reminders — VAPID keys are generated on first run and kept in the data
-folder). See `server/app.js` and `server/push.js`.
+folder), `/api/ai/*` (assistant), `/api/mcp/tokens` and `/mcp` (MCP). See
+`server/app.js`, `server/push.js`, `server/ai.js` and `server/mcp.js`; the
+dashboard actions both AI features use live in `shared/dashboard-tools.js`.
 
 ### Deploying in Portainer
 

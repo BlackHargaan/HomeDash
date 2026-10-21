@@ -14,16 +14,23 @@
 //   POST /api/push/unsubscribe {endpoint}
 //   PUT  /api/push/schedule {items}  reminders to push when they come due
 //   POST /api/push/test {endpoint}   send a test notification
+//   GET/PUT /api/ai/config           AI assistant settings (the API key is write-only)
+//   POST /api/ai/chat                one assistant turn, streamed as Server-Sent Events
+//   GET  /api/ai/ollama/models       models available on the configured Ollama
+//   GET/POST /api/mcp/tokens, DELETE /api/mcp/tokens/:id   MCP access tokens
+//   POST /mcp                        MCP endpoint (bearer token, not the cookie)
 //
-// Zero dependencies — only Node built-ins — so the same module can run inside
-// the Docker image and be embedded in the desktop app.
+// Only Node built-ins plus the Anthropic SDK (for the AI assistant), so the
+// same module runs inside the Docker image and the desktop app.
 import http from 'node:http'
 import https from 'node:https'
 import crypto from 'node:crypto'
 import { createReadStream, existsSync } from 'node:fs'
 import { mkdir, readFile, rename, stat, writeFile } from 'node:fs/promises'
-import { createPushService } from './push.js'
 import { extname, join, resolve, sep } from 'node:path'
+import { createPushService } from './push.js'
+import { createAi } from './ai.js'
+import { createMcp } from './mcp.js'
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -60,6 +67,8 @@ export async function startServer(opts = {}) {
   const secret = await loadSecret(dataDir)
   const store = createStore(dataDir)
   const push = await createPushService({ dataDir, subject: pushSubject, log, allowHttp: !!opts.allowInsecurePush })
+  const ai = await createAi({ dataDir, log, anthropicOptions: opts.anthropicOptions })
+  const mcp = await createMcp({ dataDir, store, version, log })
   // Deterministic per (server secret, password): changing the password signs
   // everyone out.
   const sessionToken = password ? hmac(secret, `session:${password}`) : null
@@ -83,6 +92,7 @@ export async function startServer(opts = {}) {
         auth: !!password,
         authed: isAuthed(req),
         docker: { available: existsSync(dockerSocket), control: dockerControl },
+        features: ['push', 'ai', 'mcp'],
       })
     }
 
@@ -184,6 +194,20 @@ export async function startServer(opts = {}) {
       return json(res, 200, await push.test(body?.endpoint ? String(body.endpoint) : undefined))
     }
 
+    if (path === '/api/ai/config') {
+      if (method === 'GET') return json(res, 200, ai.publicConfig())
+      if (method === 'PUT') return json(res, 200, await ai.updateConfig((await readJson(req)) || {}))
+    }
+    if (path === '/api/ai/chat' && method === 'POST') return ai.chat(req, res, await readJson(req))
+    if (path === '/api/ai/ollama/models' && method === 'GET') return json(res, 200, await ai.ollamaModels())
+
+    if (path === '/api/mcp/tokens') {
+      if (method === 'GET') return json(res, 200, { tokens: mcp.listTokens() })
+      if (method === 'POST') return json(res, 200, await mcp.createToken((await readJson(req)) || {}))
+    }
+    const revoke = path.match(/^\/api\/mcp\/tokens\/([a-f0-9]{6,32})$/)
+    if (revoke && method === 'DELETE') return json(res, 200, await mcp.revokeToken(revoke[1]))
+
     return json(res, 404, { error: 'Not found' })
   }
 
@@ -218,7 +242,8 @@ export async function startServer(opts = {}) {
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, 'http://localhost')
     try {
-      if (url.pathname.startsWith('/api/')) await handleApi(req, res, url)
+      if (url.pathname === '/mcp') await mcp.handle(req, res, readJson)
+      else if (url.pathname.startsWith('/api/')) await handleApi(req, res, url)
       else await handleStatic(req, res, url)
     } catch (err) {
       log('error', err)

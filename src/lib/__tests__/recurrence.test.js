@@ -85,3 +85,16 @@ describe('parseRRule', () => {
     expect(parseRRule('INTERVAL=2')).toBeNull()
   })
 })
+
+describe('collectOccurrences window', () => {
+  it('keeps only one-off events that overlap the window', () => {
+    const d = (day, h) => new Date(2026, 9, day, h).toISOString()
+    const events = [
+      { id: 'a', title: 'In', start: d(21, 10), end: d(21, 11) },
+      { id: 'b', title: 'Later', start: d(28, 10), end: d(28, 11) },
+      { id: 'c', title: 'Spans', start: d(20, 22), end: d(21, 1) },
+    ]
+    const out = collectOccurrences(events, new Date(2026, 9, 21, 0), new Date(2026, 9, 21, 23, 59))
+    expect(out.map((e) => e.title)).toEqual(['Spans', 'In'])
+  })
+})

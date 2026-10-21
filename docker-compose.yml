@@ -16,6 +16,10 @@ services:
       # - HOMEDASH_PASSWORD=change-me
       # Optional: allow restart buttons in the Docker widget (remove ":ro" above).
       # - HOMEDASH_DOCKER_CONTROL=true
+      # Optional: AI assistant — an Anthropic API key (or paste it in Settings),
+      # and/or the address of an Ollama server for a local model.
+      # - ANTHROPIC_API_KEY=sk-ant-...
+      # - HOMEDASH_OLLAMA_URL=http://192.168.1.10:11434
       - TZ=UTC
     restart: unless-stopped
 
