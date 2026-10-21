@@ -59,10 +59,14 @@ jobs:
         if: always()
         run: docker logs hd || true
 
-  # Package the Linux desktop app and launch it, so a change can't ship a
-  # desktop build that fails to start.
+  # Package the desktop app on all three systems and launch it, so a change
+  # can't ship a desktop build that fails to build or start.
   desktop:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
 
@@ -81,10 +85,18 @@ jobs:
 
       - name: Package (unpacked, no installer)
         working-directory: desktop
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
         run: |
           npm ci
           npm run dist:dir
 
-      - name: Launch smoke test
+      - name: Launch smoke test (Linux, virtual display)
+        if: runner.os == 'Linux'
         working-directory: desktop
         run: xvfb-run -a node scripts/smoke.mjs
+
+      - name: Launch smoke test
+        if: runner.os != 'Linux'
+        working-directory: desktop
+        run: node scripts/smoke.mjs
