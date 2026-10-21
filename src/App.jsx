@@ -10,8 +10,11 @@ import AddWidgetModal from './components/AddWidgetModal.jsx'
 import SettingsModal from './components/SettingsModal.jsx'
 import CommandPalette from './components/CommandPalette.jsx'
 import Reminders from './components/Reminders.jsx'
+import Icon from './components/Icon.jsx'
 import AssistantPanel from './components/AssistantPanel.jsx'
 import { useAssistant } from './context/AssistantContext.jsx'
+
+const isMac = typeof navigator !== 'undefined' && /mac|iphone|ipad/i.test(navigator.platform || navigator.userAgent)
 
 export default function App() {
   const { editMode, setEditMode } = useDashboard()
@@ -26,12 +29,21 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false)
   const [showPalette, setShowPalette] = useState(false)
   const [settingsSection, setSettingsSection] = useState(null)
+  const [scrolled, setScrolled] = useState(false)
   const assistant = useAssistant()
   const openAssistant = (text) => {
     assistant.setPanelOpen(true)
     if (text) assistant.send(text)
   }
   const openSettings = (section = null) => { setSettingsSection(section); setShowSettings(true) }
+
+  // The sticky top bar firms up once the page scrolls under it.
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
 
   // Widgets can ask for a settings section (e.g. the Assistant's "Set up").
   useEffect(() => {
@@ -75,10 +87,10 @@ export default function App() {
       <Reminders />
       <div className="wallpaper" />
       <div className="app">
-        <header className="topbar">
+        <header className={`topbar ${scrolled ? 'scrolled' : ''}`}>
           <div className="brand">
-            <img className="brand-logo" src="/icons/icon.svg" alt="" width="42" height="42" />
-            <div>
+            <img className="brand-logo" src="/icons/icon.svg" alt="" width="36" height="36" />
+            <div className="brand-text">
               <h1>HomeDash</h1>
               <p className="sub">Your day, organized.</p>
             </div>
@@ -86,45 +98,40 @@ export default function App() {
 
           <BoardTabs />
 
-          <span className="topbar-spacer" />
+          <button className="tb-search" onClick={() => setShowPalette(true)} title="Search, commands and the assistant">
+            <Icon name="search" size={16} />
+            <span className="tb-search-text">Search or ask…</span>
+            <kbd>{isMac ? '⌘' : 'Ctrl'} K</kbd>
+          </button>
 
-          {updateReady(desktopUpdate) && (
-            <button
-              className="btn sm update-badge"
-              onClick={() => setShowSettings(true)}
-              title={`HomeDash ${desktopUpdate.version} is available`}
-            >
-              ⬆ Update
+          <div className="tb-actions">
+            {updateReady(desktopUpdate) && (
+              <button className="tb-pill accent" onClick={() => setShowSettings(true)} title={`HomeDash ${desktopUpdate.version} is available`}>
+                <Icon name="update" size={15} /> <span>Update</span>
+              </button>
+            )}
+            {badge && (
+              <button className={`tb-btn sync ${badge.state}`} onClick={() => setShowSettings(true)} title={`${badge.label}: ${badge.state}`} aria-label={`${badge.label}: ${badge.state}`}>
+                <Icon name={badge.state === 'error' ? 'cloudOff' : badge.state === 'syncing' ? 'refresh' : 'cloudCheck'} />
+              </button>
+            )}
+            <button className="tb-btn tb-search-icon" onClick={() => setShowPalette(true)} title={`Search (${isMac ? '⌘' : 'Ctrl+'}K)`} aria-label="Search and commands">
+              <Icon name="search" />
             </button>
-          )}
-          {badge && (
-            <button
-              className="btn ghost sm"
-              onClick={() => setShowSettings(true)}
-              title={`${badge.label}: ${badge.state}`}
-            >
-              <span className={`sync-badge ${badge.state}`}>☁</span>
+            <button className="tb-btn ai" onClick={() => assistant.setPanelOpen(true)} title={`Assistant (${isMac ? '⌘' : 'Ctrl+'}J)`} aria-label="Open assistant">
+              <Icon name="sparkles" />
             </button>
-          )}
-          <button className="btn ghost sm ai-launch" onClick={() => assistant.setPanelOpen(true)} title="Assistant (⌘J)" aria-label="Open assistant">
-            ✨
-          </button>
-          <button className="btn ghost sm" onClick={() => setShowPalette(true)} title="Command palette (⌘K)">
-            <span>⌘</span>K
-          </button>
-          <button className="btn" onClick={() => setShowAdd(true)}>
-            <span>＋</span> Add widget
-          </button>
-          <button
-            className={`btn ${editMode ? 'active' : ''}`}
-            onClick={() => setEditMode((e) => !e)}
-            title="Rearrange & resize widgets"
-          >
-            {editMode ? '✓ Done' : '✎ Edit'}
-          </button>
-          <button className="btn icon" onClick={() => setShowSettings(true)} title="Settings" aria-label="Settings">
-            ⚙️
-          </button>
+            <button className={`tb-btn ${editMode ? 'on' : ''}`} onClick={() => setEditMode((e) => !e)} title={editMode ? 'Done editing' : 'Rearrange & resize widgets'} aria-label={editMode ? 'Done editing' : 'Edit layout'} aria-pressed={editMode}>
+              <Icon name={editMode ? 'check' : 'edit'} />
+            </button>
+            <button className="tb-btn" onClick={() => setShowSettings(true)} title="Settings" aria-label="Settings">
+              <Icon name="settings" />
+            </button>
+            <span className="tb-divider" />
+            <button className="tb-pill primary" onClick={() => setShowAdd(true)} title="Add widget" aria-label="Add widget">
+              <Icon name="plus" size={16} /> <span>Add widget</span>
+            </button>
+          </div>
         </header>
 
         <Grid />

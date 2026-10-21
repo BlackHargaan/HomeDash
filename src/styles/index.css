@@ -123,22 +123,73 @@ body { background: var(--bg); }
    ============================================================ */
 .app { min-height: 100%; padding: 22px clamp(14px, 3vw, 40px) 60px; }
 
+/* Sticky glass command bar: brand · boards · search · actions */
 .topbar {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 22px;
-  flex-wrap: wrap;
+  position: sticky; top: 10px; z-index: 40;
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 20px; padding: 8px 10px 8px 12px;
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--card-solid) 55%, transparent);
+  border: 1px solid var(--card-border);
+  backdrop-filter: blur(22px) saturate(160%);
+  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
 }
-.brand { display: flex; align-items: center; gap: 12px; }
-.brand-logo {
-  width: 42px; height: 42px; display: block; flex: 0 0 auto;
-  filter: drop-shadow(0 6px 14px rgba(20, 16, 60, 0.45));
+.topbar.scrolled {
+  background: color-mix(in srgb, var(--card-solid) 82%, transparent);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05) inset, 0 12px 32px -14px rgba(0, 0, 0, 0.55);
 }
-.brand h1 { font-size: 20px; margin: 0; font-weight: 700; letter-spacing: -0.02em; }
-.brand .sub { font-size: 12px; color: var(--text-dim); margin: 0; }
+.brand { display: flex; align-items: center; gap: 10px; flex: 0 0 auto; padding-right: 4px; }
+.brand-logo { width: 36px; height: 36px; display: block; flex: 0 0 auto; filter: drop-shadow(0 4px 10px rgba(20, 16, 60, 0.4)); }
+.brand-text { display: flex; flex-direction: column; line-height: 1.15; }
+.brand h1 { font-size: 16px; margin: 0; font-weight: 750; letter-spacing: -0.02em; }
+.brand .sub { font-size: 11px; color: var(--text-faint); margin: 0; }
 
-.topbar-spacer { flex: 1; }
+.icon { display: block; flex: 0 0 auto; }
+
+/* Search / command field (opens the ⌘K palette) */
+.tb-search {
+  flex: 0 1 300px; min-width: 150px; margin-left: auto;
+  display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 8px 0 12px;
+  font: inherit; font-size: 13px; color: var(--text-faint); cursor: pointer; text-align: left;
+  background: var(--input); border: 1px solid var(--card-border); border-radius: 11px;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.tb-search:hover { border-color: color-mix(in srgb, var(--accent) 55%, var(--card-border)); color: var(--text-dim); }
+.tb-search-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tb-search kbd, kbd {
+  font: 600 10.5px/1 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--text-dim);
+  padding: 4px 6px; border-radius: 6px; background: var(--card); border: 1px solid var(--card-border); white-space: nowrap;
+}
+
+/* Action cluster */
+.tb-actions { display: flex; align-items: center; gap: 2px; flex: 0 0 auto; }
+.tb-btn {
+  width: 36px; height: 36px; display: grid; place-items: center; flex: 0 0 auto;
+  color: var(--text-dim); background: transparent; border: 1px solid transparent; border-radius: 11px; cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.tb-btn:hover { background: var(--card-hover); color: var(--text); }
+.tb-btn:focus-visible, .tb-pill:focus-visible, .tb-search:focus-visible, .boardtab-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.tb-btn.on { color: var(--accent); background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
+.tb-btn.ai { color: var(--accent); }
+.tb-btn.sync.synced { color: var(--ok); }
+.tb-btn.sync.syncing { color: var(--accent); }
+.tb-btn.sync.syncing .icon { animation: tb-spin 1.2s linear infinite; }
+.tb-btn.sync.error { color: var(--danger); }
+@keyframes tb-spin { to { transform: rotate(360deg); } }
+.tb-search-icon { display: none; }
+.tb-divider { width: 1px; height: 22px; background: var(--line); margin: 0 6px; }
+.tb-pill {
+  height: 36px; display: inline-flex; align-items: center; gap: 6px; padding: 0 14px 0 11px; flex: 0 0 auto;
+  font: inherit; font-size: 13px; font-weight: 650; border-radius: 11px; cursor: pointer; border: 1px solid transparent; white-space: nowrap;
+  transition: filter 0.15s, transform 0.08s;
+}
+.tb-pill:active { transform: translateY(1px); }
+.tb-pill.primary { background: var(--accent); color: #0b0f1a; box-shadow: 0 6px 18px -8px var(--accent); }
+.tb-pill.primary:hover { filter: brightness(1.08); }
+.tb-pill.accent { color: var(--accent); background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 45%, transparent); margin-right: 4px; }
 
 .btn {
   font: inherit;
@@ -173,30 +224,38 @@ body { background: var(--bg); }
 /* ============================================================
    Board tabs
    ============================================================ */
-.boardtabs { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
-.boardtab { position: relative; display: flex; align-items: center; }
+.boardtabs {
+  display: flex; align-items: center; gap: 2px; min-width: 0; padding: 3px;
+  background: var(--input); border: 1px solid var(--line); border-radius: 12px;
+  overflow-x: auto; scrollbar-width: none;
+}
+.boardtabs::-webkit-scrollbar { display: none; }
+.boardtab { position: relative; display: flex; align-items: center; flex: 0 0 auto; }
 .boardtab-btn {
   font: inherit; font-size: 13px; font-weight: 600; color: var(--text-dim);
-  background: transparent; border: 1px solid transparent; border-radius: 11px;
-  padding: 7px 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
-  transition: background 0.15s, color 0.15s;
+  background: transparent; border: 1px solid transparent; border-radius: 9px;
+  height: 30px; padding: 0 11px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
 }
-.boardtab-btn:hover { background: var(--card); color: var(--text); }
-.boardtab.on .boardtab-btn { background: var(--card); color: var(--text); border-color: var(--card-border); }
-.boardtab-icon { font-size: 14px; }
+.boardtab-btn:hover { color: var(--text); }
+.boardtab.on .boardtab-btn {
+  background: var(--card-solid); color: var(--text); border-color: var(--card-border);
+  box-shadow: 0 2px 8px -3px rgba(0, 0, 0, 0.45);
+}
+.boardtab-icon { font-size: 13px; }
 .boardtab-del {
-  position: absolute; top: -5px; right: -5px; width: 16px; height: 16px; border-radius: 50%;
-  background: var(--danger); color: #fff; border: none; cursor: pointer; font-size: 9px; display: grid; place-items: center;
+  position: absolute; top: -4px; right: -4px; width: 15px; height: 15px; border-radius: 50%;
+  background: var(--danger); color: #fff; border: none; cursor: pointer; font-size: 8px; display: grid; place-items: center;
 }
 .boardtab-input {
-  font: inherit; font-size: 13px; font-weight: 600; color: var(--text);
-  background: var(--input); border: 1px solid var(--accent); border-radius: 11px; padding: 6px 10px; width: 120px; outline: none;
+  font: inherit; font-size: 13px; font-weight: 600; color: var(--text); height: 30px;
+  background: var(--card-solid); border: 1px solid var(--accent); border-radius: 9px; padding: 0 10px; width: 120px; outline: none;
 }
 .boardtab-add {
-  font: inherit; font-size: 16px; color: var(--text-dim); background: transparent; border: 1px dashed var(--card-border);
-  border-radius: 11px; width: 32px; height: 32px; cursor: pointer; display: grid; place-items: center;
+  font: inherit; font-size: 15px; color: var(--text-faint); background: transparent; border: none;
+  border-radius: 9px; width: 30px; height: 30px; cursor: pointer; display: grid; place-items: center; flex: 0 0 auto;
 }
-.boardtab-add:hover { color: var(--text); border-color: var(--accent); }
+.boardtab-add:hover { color: var(--text); background: var(--card-hover); }
 
 /* ============================================================
    Command palette
@@ -270,11 +329,35 @@ body { background: var(--bg); }
 .wtool:hover { color: var(--text); border-color: var(--accent); }
 .wtool.del:hover { color: var(--danger); border-color: var(--danger); }
 
-/* Scrollbars */
-.widget-body::-webkit-scrollbar, .modal-body::-webkit-scrollbar { width: 8px; }
-.widget-body::-webkit-scrollbar-thumb, .modal-body::-webkit-scrollbar-thumb {
-  background: var(--line); border-radius: 8px;
+/* Scrollbars: thin glass pills that pick up the accent on hover. Inner
+   scroll areas (widgets, modals, lists) only show theirs while hovered. */
+:root {
+  --scroll-thumb: color-mix(in srgb, var(--text) 20%, transparent);
+  --scroll-thumb-hover: color-mix(in srgb, var(--accent) 70%, transparent);
 }
+::-webkit-scrollbar { width: 12px; height: 12px; }
+::-webkit-scrollbar-track, ::-webkit-scrollbar-corner { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background-color: var(--scroll-thumb); background-clip: padding-box;
+  border: 3.5px solid transparent; border-radius: 999px; min-height: 40px;
+}
+::-webkit-scrollbar-thumb:hover { background-color: var(--scroll-thumb-hover); border-width: 3px; }
+::-webkit-scrollbar-thumb:active { background-color: var(--accent); }
+::-webkit-scrollbar-button { display: none; height: 0; width: 0; }
+/* Page scrollbar sits on the wallpaper: a touch more visible. */
+html::-webkit-scrollbar-thumb { background-color: color-mix(in srgb, var(--text) 24%, transparent); }
+html::-webkit-scrollbar-thumb:hover { background-color: var(--scroll-thumb-hover); }
+/* Firefox (no ::-webkit-scrollbar): the standard properties. Chromium would
+   let these override the pills above, so they're only applied here. */
+@supports not selector(::-webkit-scrollbar) {
+  * { scrollbar-width: thin; scrollbar-color: var(--scroll-thumb) transparent; }
+  html { scrollbar-color: color-mix(in srgb, var(--text) 26%, transparent) transparent; }
+  .widget:not(:hover) *, .modal-body:not(:hover), .ai-list:not(:hover), .palette-list:not(:hover) { scrollbar-color: transparent transparent; }
+}
+/* Inner scrollers stay quiet until you're over them. */
+.widget:not(:hover) ::-webkit-scrollbar-thumb, .modal-body:not(:hover)::-webkit-scrollbar-thumb,
+.ai-list:not(:hover)::-webkit-scrollbar-thumb, .palette-list:not(:hover)::-webkit-scrollbar-thumb { background-color: transparent; }
+.widget ::-webkit-scrollbar, .modal-body::-webkit-scrollbar, .ai-list::-webkit-scrollbar { width: 10px; height: 10px; }
 
 /* ============================================================
    Flow layout (tablet / phone) — auto-arranging content-height grid
@@ -400,20 +483,28 @@ textarea.input { resize: vertical; min-height: 60px; line-height: 1.5; }
 /* ============================================================
    Small-screen shell tweaks
    ============================================================ */
-@media (max-width: 720px) {
-  .app { padding: 16px 14px 48px; }
-  .topbar { gap: 10px; margin-bottom: 16px; }
+@media (max-width: 1180px) {
   .brand .sub { display: none; }
-  .brand-logo { width: 36px; height: 36px; }
-  .brand h1 { font-size: 18px; }
-  /* Board tabs scroll horizontally instead of wrapping the whole bar. */
-  .boardtabs { flex-wrap: nowrap; overflow-x: auto; max-width: 44vw; scrollbar-width: none; }
-  .boardtabs::-webkit-scrollbar { display: none; }
+  .tb-search { flex-basis: 220px; }
+}
+@media (max-width: 900px) {
+  /* Phones & small tablets: brand + icon actions on one row, boards below. */
+  .topbar { flex-wrap: wrap; top: 8px; row-gap: 8px; padding: 8px; }
+  .tb-search { display: none; }
+  .tb-search-icon { display: grid; }
+  .tb-actions { margin-left: auto; }
+  .boardtabs { order: 3; flex: 1 1 100%; }
+  .tb-pill.primary { padding: 0 10px; }
+  .tb-pill.primary span { display: none; }
+}
+@media (max-width: 720px) {
+  .app { padding: 12px 12px 48px; }
   .btn { padding: 8px 11px; font-size: 12px; }
 }
 @media (max-width: 420px) {
-  .brand h1 { font-size: 16px; }
-  .boardtabs { max-width: 36vw; }
+  .brand-text { display: none; }
+  .tb-btn { width: 34px; }
+  .tb-divider { margin: 0 3px; }
 }
 
 /* ============================================================
