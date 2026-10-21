@@ -363,3 +363,31 @@
   background: var(--accent); color: #0b0f1a; font-size: 12px; font-weight: 600;
   padding: 9px 16px; border-radius: 999px; box-shadow: 0 8px 24px -6px var(--accent); z-index: 50;
 }
+
+/* ---- Service Status / Docker ---- */
+.svc, .docker { display: flex; flex-direction: column; gap: 8px; height: 100%; }
+.svc-summary { display: flex; align-items: center; gap: 8px; }
+.svc-summary .spacer { flex: 1; }
+.svc-pill { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px; }
+.svc-pill.ok { color: var(--ok); background: color-mix(in srgb, var(--ok) 16%, transparent); }
+.svc-pill.bad { color: var(--danger); background: color-mix(in srgb, var(--danger) 16%, transparent); }
+.svc-list { display: flex; flex-direction: column; gap: 2px; overflow: auto; }
+.svc-row { display: flex; align-items: center; gap: 9px; padding: 7px 6px; border-radius: 9px; }
+.svc-row:hover { background: var(--input); }
+.svc-dot { width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto; background: var(--text-faint); }
+.svc-dot.up { background: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 22%, transparent); }
+.svc-dot.down { background: var(--danger); box-shadow: 0 0 0 3px color-mix(in srgb, var(--danger) 22%, transparent); }
+.svc-dot.pending { background: var(--accent); opacity: 0.6; }
+.svc-name { flex: 1; min-width: 0; font-size: 13px; font-weight: 600; color: var(--text); text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+a.svc-name:hover { color: var(--accent); }
+.svc-meta { font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 45%; }
+.svc-del { opacity: 0; border: none; background: none; color: var(--text-faint); cursor: pointer; font-size: 11px; }
+.svc-row:hover .svc-del { opacity: 1; }
+.svc-del:hover { color: var(--danger); }
+.svc-form { display: flex; flex-direction: column; gap: 6px; }
+.svc-form .input { font-size: 13px; padding: 7px 10px; }
+.svc-add { align-self: flex-start; }
+.svc-note { font-size: 11px; margin-top: auto; }
+.docker-setup { font-size: 12px; line-height: 1.5; }
+.docker-setup p { margin: 0 0 8px; }
+.docker-setup code { background: var(--input); padding: 1px 5px; border-radius: 4px; font-size: 11px; }

@@ -15,6 +15,8 @@ import TodayWidget from './TodayWidget.jsx'
 import CountdownWidget from './CountdownWidget.jsx'
 import WorldClockWidget from './WorldClockWidget.jsx'
 import KanbanWidget from './KanbanWidget.jsx'
+import StatusWidget from './StatusWidget.jsx'
+import DockerWidget from './DockerWidget.jsx'
 
 export const WIDGET_COMPONENTS = {
   clock: ClockWidget,
@@ -32,4 +34,6 @@ export const WIDGET_COMPONENTS = {
   countdown: CountdownWidget,
   worldclock: WorldClockWidget,
   kanban: KanbanWidget,
+  status: StatusWidget,
+  docker: DockerWidget,
 }

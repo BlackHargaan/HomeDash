@@ -11,7 +11,7 @@ create policy "own state" on homedash_state
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);`
 
 export default function CloudSyncPanel() {
-  const { configured, config, user, status, error, lastSync, saveConfig, clearConfig, doSignIn, doSignUp, doSignOut, syncNow } = useSync()
+  const { configured, config, user, status, error, lastSync, paused, saveConfig, clearConfig, doSignIn, doSignUp, doSignOut, syncNow } = useSync()
   const [url, setUrl] = useState(config?.url || '')
   const [anonKey, setAnonKey] = useState(config?.anonKey || '')
   const [email, setEmail] = useState('')
@@ -20,6 +20,17 @@ export default function CloudSyncPanel() {
   const [busy, setBusy] = useState(false)
 
   async function run(fn) { setBusy(true); try { await fn() } finally { setBusy(false) } }
+
+  if (paused) {
+    return (
+      <div className="field" style={{ borderTop: '1px solid var(--line)', paddingTop: 16, marginTop: 20 }}>
+        <label>Supabase cloud sync</label>
+        <span className="faint" style={{ fontSize: 12 }}>
+          Paused — your HomeDash server is already syncing this dashboard{user ? ` (Supabase account ${user.email} stays signed in)` : ''}.
+        </span>
+      </div>
+    )
+  }
 
   // --- Signed in ---
   if (configured && user) {

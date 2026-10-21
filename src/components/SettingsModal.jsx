@@ -4,6 +4,7 @@ import { ACCENTS } from '../widgets/registry.js'
 import { exportAllData, importAllData } from '../lib/storage.js'
 import { requestNotifyPermission, notifyPermission, notifySupported } from '../lib/notify.js'
 import CloudSyncPanel from './CloudSyncPanel.jsx'
+import ServerPanel from './ServerPanel.jsx'
 import Modal from './Modal.jsx'
 
 const WALLPAPERS = [
@@ -129,6 +130,8 @@ export default function SettingsModal({ onClose }) {
         {restoreMsg === 'ok' && <span className="ok-msg">✓ Restored — reloading…</span>}
         {restoreMsg === 'error' && <span className="err-msg">That doesn’t look like a HomeDash backup.</span>}
       </div>
+
+      <ServerPanel />
 
       <CloudSyncPanel />
 

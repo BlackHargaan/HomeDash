@@ -6,4 +6,18 @@ services:
     ports:
       # Host 8080 → container 80. Change the left number to serve elsewhere.
       - "8080:80"
+    volumes:
+      # Your dashboard data (sync storage). Keep this so data survives updates.
+      - homedash-data:/data
+      # Optional: let the Docker widget see your containers (read-only).
+      # - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      # Optional: require a password to open the dashboard.
+      # - HOMEDASH_PASSWORD=change-me
+      # Optional: allow restart buttons in the Docker widget (remove ":ro" above).
+      # - HOMEDASH_DOCKER_CONTROL=true
+      - TZ=UTC
     restart: unless-stopped
+
+volumes:
+  homedash-data:

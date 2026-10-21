@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { usePersistentState, exportAllData, importAllData, readStore, writeStore } from '../lib/storage.js'
 import * as sb from '../lib/supabase.js'
+import { useServer } from './ServerContext.jsx'
 
 const SyncContext = createContext(null)
 
@@ -10,6 +11,10 @@ const PUSH_DEBOUNCE = 2500
 export function SyncProvider({ children }) {
   const [config, setConfig] = usePersistentState('sync:config', null) // { url, anonKey }
   const [session, setSession] = usePersistentState('sync:session', null) // { access_token, refresh_token, user }
+  // When the self-hosted server is syncing this dashboard, Supabase sync pauses
+  // so the two don't fight over which copy wins.
+  const paused = useServer().status === 'ready'
+  const active = !!session && !paused
   const [status, setStatus] = useState('idle') // idle | syncing | synced | error | offline
   const [error, setError] = useState(null)
   const [lastSync, setLastSync] = useState(null)
@@ -83,7 +88,7 @@ export function SyncProvider({ children }) {
 
   // Debounced push on any dashboard change while signed in.
   useEffect(() => {
-    if (!session) return
+    if (!active) return
     const onChange = () => {
       if (applyingRef.current) return
       clearTimeout(pushTimer.current)
@@ -91,11 +96,11 @@ export function SyncProvider({ children }) {
     }
     window.addEventListener('homedash:change', onChange)
     return () => { window.removeEventListener('homedash:change', onChange); clearTimeout(pushTimer.current) }
-  }, [session, push])
+  }, [active, push])
 
   // Periodic pull while signed in.
   useEffect(() => {
-    if (!session) { setStatus(configured ? 'idle' : 'idle'); return }
+    if (!active) { setStatus('idle'); return }
     let alive = true
     const tick = async () => {
       try { if (alive) await pull() } catch (e) { if (alive) { setStatus('error'); setError(e.message) } }
@@ -103,7 +108,7 @@ export function SyncProvider({ children }) {
     tick()
     const iv = setInterval(tick, PULL_INTERVAL)
     return () => { alive = false; clearInterval(iv) }
-  }, [session, configured, pull])
+  }, [active, pull])
 
   // ---- Public actions ----
   const saveConfig = useCallback((url, anonKey) => {
@@ -163,7 +168,7 @@ export function SyncProvider({ children }) {
   }, [session, setSession])
 
   const value = {
-    configured, config, user, status, error, lastSync,
+    configured, config, user, status, error, lastSync, paused,
     saveConfig, clearConfig, doSignIn, doSignUp, doSignOut,
     syncNow: push,
   }

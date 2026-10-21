@@ -4,8 +4,10 @@ Your day, organized. A customizable **bento-grid productivity dashboard** for
 everyday use — think Homarr/homepage, but built around calendars, tasks, habits
 and focus rather than server monitoring.
 
-Everything lives in your browser (localStorage) — no accounts, no backend, no
-tracking. Drag, drop and resize widgets into a layout that's yours.
+Drag, drop and resize widgets into a layout that's yours. Run it as a plain
+static site (everything stays in your browser), or with its small built-in
+server — in Docker or on your PC — for sync across devices, calendar/RSS
+fetching and homelab service checks. No accounts, no tracking.
 
 ## Features
 
@@ -41,15 +43,23 @@ tracking. Drag, drop and resize widgets into a layout that's yours.
   Links** launcher with auto favicons.
 - **Stats** — at-a-glance tiles (tasks done, habits, upcoming events) plus a
   weekly focus sparkline, aggregated live from your other widgets.
+- **Kanban board** — drag cards across To do / Doing / Done.
+- **Service Status** — watch your homelab services: up/down, HTTP status and
+  response time (self-signed HTTPS supported).
+- **Docker** — your containers and their state, with optional restart buttons.
 
-### 💾 Backup & cloud sync
+### 💾 Sync & backup
 
-Everything lives in your browser by default. You can **export/import a JSON
-backup** anytime, and optionally turn on **cross-device cloud sync** with your
-own free [Supabase](https://supabase.com) project — paste your Project URL and
-anon key in Settings, run the one-time SQL it shows you, and sign in. Sync is
-last-write-wins with automatic background push/pull; auth tokens never leave the
-device or enter the synced data.
+- **With the HomeDash server** (Docker image, `npm start`, or the Windows
+  launcher), your dashboard is saved on the server and every browser that opens
+  it stays in sync automatically — nothing to configure. A browser that has
+  never synced takes the server's copy; after that, the newest change wins.
+- **Without the server**, data lives in your browser. You can still turn on
+  cross-device sync with your own free [Supabase](https://supabase.com) project
+  (Settings → Cloud sync). Supabase sync pauses automatically when the server is
+  syncing, so the two never fight.
+- **Export/import a JSON backup** anytime from Settings. Sync credentials never
+  leave the device or enter backups.
 
 ### 🧩 Custom widgets & integrations
 
@@ -60,7 +70,8 @@ Two escape hatches let you extend HomeDash without touching code:
 - **Custom Integration** — point at any JSON API, drill into a value with a
   dot-path (e.g. `results[0].count`), add a label/prefix/suffix and a refresh
   interval, and display it as a live tile. Great for home-lab metrics, tickers
-  or API counts. *(The endpoint must allow cross-origin requests.)*
+  or API counts. *(With the server, any URL works; without it, the endpoint
+  must allow cross-origin requests.)*
 
 Want a brand-new widget **type**? It's a small, well-defined contract — see
 [Adding a widget](#adding-a-widget-type) below.
@@ -69,11 +80,15 @@ Want a brand-new widget **type**? It's a small, well-defined contract — see
 
 ```bash
 npm install
-npm run dev      # start the dev server (http://localhost:5173)
-npm run build    # production build → dist/
-npm run preview  # preview the production build
+npm start        # build, then run the HomeDash server (http://localhost:8787)
+npm run dev      # Vite dev server with hot reload (http://localhost:5173)
+npm run server   # just the server (serves the last build from dist/)
 npm test         # run the unit tests (Vitest)
 ```
+
+`npm run dev` works on its own in browser-only mode. To develop against the
+server too, run `npm run server` in a second terminal — Vite forwards `/api` to
+it. Server data is stored in `./data` (git-ignored).
 
 Every pull request runs the tests and a production build in GitHub Actions
 (`.github/workflows/ci.yml`).
@@ -81,14 +96,15 @@ Every pull request runs the tests and a production build in GitHub Actions
 Requires Node 18+.
 
 **Windows quick start:** double-click **`install-and-run.bat`** — it installs
-dependencies on first run, starts the dev server, and opens
-`http://localhost:5173` in your browser. (Node.js must be installed first.)
+dependencies on first run, builds the app, starts the HomeDash server and opens
+`http://localhost:8787`. Data is saved in the `data` folder next to it.
+(Node.js must be installed first.)
 
 ## Self-hosting with Docker
 
-HomeDash builds to static files, so the image is a tiny nginx container (no
-Node at runtime). Data lives in each visitor's browser — the container is
-stateless, so there are no volumes to manage.
+The image runs the HomeDash server (`node:20-alpine`, no npm dependencies at
+runtime). It serves the app and the API, and stores your dashboard in `/data` —
+**mount a named volume there** so it survives updates.
 
 **Docker Compose** (recommended):
 
@@ -103,16 +119,30 @@ Then open **http://localhost:8080**. Change the host port by editing the
 
 ```bash
 docker build -t homedash .
-docker run -d --name homedash -p 8080:80 --restart unless-stopped homedash
+docker run -d --name homedash -p 8080:80 -v homedash-data:/data \
+  --restart unless-stopped homedash
 ```
 
-The image is a multi-stage build (`node:20-alpine` to build → `nginx:alpine`
-to serve) with gzip, long-lived caching for hashed assets, an SPA fallback and
-a container healthcheck. Put it behind your reverse proxy (Traefik, Caddy,
-nginx-proxy, etc.) for TLS and a hostname, just like Homarr/homepage.
+Put it behind your reverse proxy (Traefik, Caddy, nginx-proxy, etc.) for TLS and
+a hostname, just like Homarr/homepage.
 
-> Weather and (optional) cloud sync are called from the browser, so the
-> container itself needs no API keys or outbound configuration.
+**Environment variables (all optional):**
+
+| Variable | Effect |
+|---|---|
+| `HOMEDASH_PASSWORD` | Require a password to open the dashboard. **Set this before exposing HomeDash outside your home network** — the server's fetch proxy and status checks can reach anything on your LAN. |
+| `HOMEDASH_DOCKER_CONTROL=true` | Allow restart buttons in the Docker widget. |
+| `PORT`, `DATA_DIR`, `DOCKER_SOCKET` | Override the listen port (80 in the image), data folder (`/data`) or socket path. |
+
+**Docker widget:** mount the socket read-only —
+`/var/run/docker.sock:/var/run/docker.sock:ro` — to list containers. Restart
+buttons additionally need `HOMEDASH_DOCKER_CONTROL=true` and a writable socket
+(drop `:ro`). Mounting the socket gives HomeDash full control of Docker, so only
+do it if you want that widget.
+
+**API:** `/api/health`, `/api/state` (sync), `/api/proxy?url=` (server-side
+fetch), `/api/status` (reachability checks), `/api/docker/*`. See
+`server/app.js`.
 
 ### Deploying in Portainer
 
@@ -132,8 +162,22 @@ services:
     container_name: homedash
     ports:
       - "8080:80"
+    volumes:
+      - homedash-data:/data
+      # - /var/run/docker.sock:/var/run/docker.sock:ro   # Docker widget
+    environment:
+      - TZ=UTC
+      # - HOMEDASH_PASSWORD=change-me
     restart: unless-stopped
+
+volumes:
+  homedash-data:
 ```
+
+> **Upgrading from an earlier image?** Add the `volumes:` lines above. Without a
+> named volume your server copy is lost on each re-create — your browsers still
+> hold their data and will re-seed it, but the volume makes the server copy
+> permanent.
 
 Deploy, then browse to `http://<host>:8080`. To update later, use Portainer's
 **Recreate** (with "Re-pull image") or add a watchtower/Portainer webhook.
@@ -149,11 +193,15 @@ the image on the host using the `Dockerfile`.
 ## Architecture
 
 ```
+server/
+  app.js                   # HomeDash server: static app + /api (no dependencies)
+  index.js                 # CLI entry, reads env vars
 src/
-  main.jsx                 # entry — mounts <App> inside <DashboardProvider>
+  main.jsx                 # entry — mounts <App> inside the providers
   App.jsx                  # top bar (Add widget / Edit / Settings) + <Grid>
   context/
     DashboardContext.jsx   # theme, boards, layouts, shared data stores
+    ServerContext.jsx      # server detection, sign-in state, server sync
     SyncContext.jsx        # Supabase cloud-sync state machine (push/pull)
   components/
     Grid.jsx               # react-grid-layout bento grid
@@ -165,6 +213,8 @@ src/
     AddWidgetModal.jsx     # widget catalog
     SettingsModal.jsx      # theme / notifications / backup / cloud sync
     CloudSyncPanel.jsx     # Supabase config + sign in
+    ServerPanel.jsx        # server connection status in Settings
+    LoginScreen.jsx        # password gate when HOMEDASH_PASSWORD is set
   widgets/
     registry.js            # widget catalog metadata (sizes, names, icons)
     index.js               # type → component map
@@ -177,6 +227,7 @@ src/
     nlp.js                 # natural-language event parsing
     notify.js              # Notification API wrapper
     supabase.js            # Supabase auth + state REST client (no SDK)
+    server.js              # HomeDash server API client + smartFetch (proxy)
   styles/
     index.css              # tokens, glass, wallpapers, grid, tabs, palette
     widgets.css            # per-widget styles

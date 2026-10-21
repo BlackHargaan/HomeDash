@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from 'react'
 import { useDashboard } from '../context/DashboardContext.jsx'
 import { uid } from '../lib/storage.js'
+import { smartFetch, serverUsable } from '../lib/server.js'
 import { parseICS, eventsToICS } from '../lib/ics.js'
 import { expandInRange, collectOccurrences, describeRecurrence, SIMPLE_FREQS } from '../lib/recurrence.js'
 import { EVENT_COLORS, ACCENTS } from './registry.js'
@@ -565,16 +566,17 @@ function ImportModal({ onClose, onFile, onExport, onUrlImport }) {
     if (!url.trim()) return
     setStatus('loading')
     try {
-      // Google Calendar "secret iCal address" and any public .ics URL work here,
-      // provided the host allows cross-origin requests.
-      const res = await fetch(url.trim())
+      // Goes through the HomeDash server's proxy when available, so Google's
+      // iCal URLs (which send no CORS headers) work; otherwise fetched directly.
+      const res = await smartFetch(url.trim())
+      if (!res.ok) throw new Error(`The calendar host answered ${res.status}`)
       const text = await res.text()
       const parsed = parseICS(text).map((e) => ({ ...e, source: 'url:' + url.trim() }))
-      if (parsed.length === 0) throw new Error('no events')
+      if (parsed.length === 0) throw new Error('No events found at that URL')
       onUrlImport(parsed, 'url:' + url.trim())
       setStatus(`ok:${parsed.length}`)
-    } catch {
-      setStatus('error')
+    } catch (e) {
+      setStatus({ error: e.message })
     }
   }
 
@@ -599,7 +601,12 @@ function ImportModal({ onClose, onFile, onExport, onUrlImport }) {
           </button>
         </div>
         {typeof status === 'string' && status.startsWith('ok') && <p className="ok-msg">✓ Imported {status.split(':')[1]} events.</p>}
-        {status === 'error' && <p className="err-msg">Couldn’t fetch. The calendar host may block cross-origin requests — try exporting the .ics file instead.</p>}
+        {status?.error && (
+          <p className="err-msg">
+            Couldn’t sync: {status.error}.
+            {!serverUsable() && ' Without the HomeDash server, many calendar hosts (including Google) block this request — run HomeDash with its server, or export the .ics file instead.'}
+          </p>
+        )}
       </div>
 
       <div className="import-section">

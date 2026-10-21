@@ -414,3 +414,18 @@ textarea.input { resize: vertical; min-height: 60px; line-height: 1.5; }
   .brand h1 { font-size: 16px; }
   .boardtabs { max-width: 36vw; }
 }
+
+/* ============================================================
+   Server: sign-in gate, boot splash, settings separators
+   ============================================================ */
+.boot-splash { min-height: 100vh; }
+.login-wrap { min-height: 100vh; display: grid; place-items: center; padding: 20px; }
+.login-card {
+  width: min(360px, 100%); padding: 28px; display: flex; flex-direction: column; gap: 12px; text-align: center;
+}
+.login-card h1 { margin: 4px 0 0; font-size: 22px; letter-spacing: -0.02em; }
+.login-card p { margin: 0 0 6px; font-size: 13px; }
+.login-logo { margin: 0 auto; }
+.section-sep { margin-top: 20px; border-top: 1px solid var(--line); padding-top: 16px; }
+.section-sep code { background: var(--input); padding: 1px 5px; border-radius: 4px; font-size: 11px; }
+.login-card .btn { justify-content: center; }
