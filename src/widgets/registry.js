@@ -18,7 +18,7 @@ export const WIDGET_TYPES = {
   calendar: {
     name: 'Calendar',
     icon: '📅',
-    description: 'Full month/week calendar with events, .ics import & sync.',
+    description: 'Day, week, month & agenda views, multiple calendars, .ics import & feeds.',
     layout: { w: 6, h: 8, minW: 4, minH: 6 },
     singleton: true,
   },
@@ -109,6 +109,48 @@ export const WIDGET_TYPES = {
     description: 'Pull a value from a JSON API and show it as a live tile.',
     layout: { w: 3, h: 3, minW: 2, minH: 2 },
   },
+  rss: {
+    name: 'RSS Reader',
+    icon: '📰',
+    description: 'Headlines from your favorite sites and blogs (RSS & Atom).',
+    layout: { w: 4, h: 6, minW: 3, minH: 3 },
+  },
+  search: {
+    name: 'Search Bar',
+    icon: '🔎',
+    description: 'Search Google, DuckDuckGo, YouTube… with !bang shortcuts. Press / to focus.',
+    layout: { w: 6, h: 2, minW: 3, minH: 2 },
+  },
+  calculator: {
+    name: 'Calculator',
+    icon: '🧮',
+    description: 'Quick maths and unit conversions — “5 km to mi”, “15% of 80”.',
+    layout: { w: 3, h: 5, minW: 2, minH: 3 },
+  },
+  bookmarks: {
+    name: 'Bookmark Groups',
+    icon: '🔖',
+    description: 'Collapsible groups of links; import your browser bookmarks.',
+    layout: { w: 3, h: 6, minW: 2, minH: 3 },
+  },
+  notebook: {
+    name: 'Notebook',
+    icon: '📓',
+    description: 'Markdown pages with preview and clickable checklists.',
+    layout: { w: 4, h: 6, minW: 3, minH: 4 },
+  },
+  quote: {
+    name: 'Quote of the Day',
+    icon: '💬',
+    description: 'A new quote every day — or your own collection.',
+    layout: { w: 3, h: 3, minW: 2, minH: 2 },
+  },
+  github: {
+    name: 'GitHub Activity',
+    icon: '🐙',
+    description: 'Recent public pushes, PRs and issues for any GitHub user.',
+    layout: { w: 4, h: 6, minW: 3, minH: 4 },
+  },
 }
 
 export function widgetMeta(type) {
@@ -122,7 +164,8 @@ export const FLOW_HEIGHTS = {
   clock: 150, weather: 250, calendar: 400, tasks: 320, notes: 220,
   links: 210, habits: 250, pomodoro: 300, stats: 220, today: 340,
   countdown: 175, worldclock: 250, kanban: 340, embed: 320, iframeStat: 160,
-  status: 260, docker: 300,
+  status: 260, docker: 300, rss: 360, search: 140, calculator: 280, bookmarks: 300,
+  notebook: 360, quote: 190, github: 360,
 }
 export function flowHeight(type) {
   return FLOW_HEIGHTS[type] || 240
@@ -141,3 +184,12 @@ export const ACCENTS = {
 }
 
 export const EVENT_COLORS = ['indigo', 'violet', 'cyan', 'emerald', 'amber', 'rose']
+
+// Sections of the "Add a widget" catalog, in display order.
+export const WIDGET_CATEGORIES = [
+  ['Plan & do', ['today', 'calendar', 'tasks', 'kanban', 'habits', 'pomodoro', 'stats']],
+  ['Write & save', ['notebook', 'notes', 'bookmarks', 'links']],
+  ['Time & info', ['clock', 'worldclock', 'countdown', 'weather', 'quote']],
+  ['Feeds & tools', ['search', 'calculator', 'rss', 'github']],
+  ['Homelab & custom', ['status', 'docker', 'embed', 'iframeStat']],
+]

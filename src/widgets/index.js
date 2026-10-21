@@ -17,6 +17,13 @@ import WorldClockWidget from './WorldClockWidget.jsx'
 import KanbanWidget from './KanbanWidget.jsx'
 import StatusWidget from './StatusWidget.jsx'
 import DockerWidget from './DockerWidget.jsx'
+import RssWidget from './RssWidget.jsx'
+import SearchWidget from './SearchWidget.jsx'
+import CalculatorWidget from './CalculatorWidget.jsx'
+import BookmarksWidget from './BookmarksWidget.jsx'
+import NotebookWidget from './NotebookWidget.jsx'
+import QuoteWidget from './QuoteWidget.jsx'
+import GitHubWidget from './GitHubWidget.jsx'
 
 export const WIDGET_COMPONENTS = {
   clock: ClockWidget,
@@ -36,4 +43,11 @@ export const WIDGET_COMPONENTS = {
   kanban: KanbanWidget,
   status: StatusWidget,
   docker: DockerWidget,
+  rss: RssWidget,
+  search: SearchWidget,
+  calculator: CalculatorWidget,
+  bookmarks: BookmarksWidget,
+  notebook: NotebookWidget,
+  quote: QuoteWidget,
+  github: GitHubWidget,
 }

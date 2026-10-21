@@ -69,3 +69,18 @@ export function fmtDateTimeLocal(d) {
 }
 
 export const WEEKDAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+
+// "just now", "5m", "3h", "2d", then a short date.
+export function timeAgo(iso, now = Date.now()) {
+  if (!iso) return ''
+  const t = new Date(iso).getTime()
+  if (Number.isNaN(t)) return ''
+  const m = Math.round((now - t) / 60000)
+  if (m < 1) return 'just now'
+  if (m < 60) return `${m}m`
+  const h = Math.round(m / 60)
+  if (h < 24) return `${h}h`
+  const d = Math.round(h / 24)
+  if (d < 7) return `${d}d`
+  return new Date(t).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+}

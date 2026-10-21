@@ -466,3 +466,146 @@ a.svc-name:hover { color: var(--accent); }
 .docker-setup { font-size: 12px; line-height: 1.5; }
 .docker-setup p { margin: 0 0 8px; }
 .docker-setup code { background: var(--input); padding: 1px 5px; border-radius: 4px; font-size: 11px; }
+
+/* ============================================================
+   Widget pack: RSS, Search, Calculator, Bookmarks, Notebook,
+   Quote, GitHub
+   ============================================================ */
+.wtool.on { color: var(--accent); border-color: var(--accent); }
+
+/* RSS */
+.rss { display: flex; flex-direction: column; gap: 8px; height: 100%; min-height: 0; }
+.rss-bar { display: flex; align-items: center; gap: 6px; font-size: 11.5px; }
+.rss-manage { display: flex; flex-direction: column; gap: 6px; padding: 8px; border: 1px solid var(--line); border-radius: 10px; background: var(--input); }
+.rss-feed-row { display: flex; align-items: center; gap: 8px; font-size: 12.5px; }
+.rss-feed-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.rss-feed-err { margin: 0 !important; font-size: 11px; max-width: 55%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rss-suggest { display: flex; flex-wrap: wrap; gap: 4px; }
+.rss-opt, .rss-note { font-size: 11px; }
+.rss-list { display: flex; flex-direction: column; gap: 2px; overflow: auto; flex: 1; min-height: 0; margin: 0 -4px; }
+.rss-item { display: flex; flex-direction: column; gap: 2px; padding: 7px 6px; border-radius: 8px; color: var(--text); text-decoration: none; }
+.rss-item:hover { background: var(--input); }
+.rss-item.read { opacity: 0.5; }
+.rss-title { font-size: 13px; font-weight: 600; line-height: 1.3; }
+.rss-summary { font-size: 11.5px; color: var(--text-dim); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.rss-meta { font-size: 10.5px; }
+
+/* Search bar */
+.search-w { display: flex; flex-direction: column; gap: 8px; justify-content: center; height: 100%; }
+.search-box {
+  display: flex; align-items: center; gap: 8px; padding: 4px 4px 4px 12px; border-radius: 999px;
+  background: var(--input); border: 1px solid var(--card-border); transition: border-color 0.12s;
+}
+.search-box:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.search-icon { color: var(--text-faint); font-size: 16px; }
+.search-input { flex: 1; min-width: 0; background: none; border: none; outline: none; color: var(--text); font-size: 14px; padding: 6px 0; font-family: inherit; }
+.search-box .btn { border-radius: 999px; }
+.search-engines { display: flex; flex-wrap: wrap; gap: 4px; }
+.search-add { display: flex; flex-direction: column; gap: 6px; }
+.search-opt { font-size: 11px; flex-wrap: wrap; }
+.search-tip code { font-size: 10.5px; background: var(--input); padding: 0 4px; border-radius: 4px; }
+
+/* Calculator */
+.calc { display: flex; flex-direction: column; gap: 8px; height: 100%; min-height: 0; }
+.calc-box { display: flex; flex-direction: column; gap: 4px; }
+.calc-input { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 14px; }
+.calc-preview { font-size: 13px; min-height: 20px; padding: 0 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.calc-preview b { font-size: 16px; color: var(--accent); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.calc-preview.err { color: var(--danger); font-size: 12px; }
+.calc-examples { display: flex; flex-wrap: wrap; gap: 4px; }
+.calc-history { display: flex; flex-direction: column; gap: 2px; overflow: auto; flex: 1; min-height: 0; }
+.calc-row { display: flex; align-items: baseline; gap: 8px; border-bottom: 1px solid var(--line); padding: 4px 0; }
+.calc-expr, .calc-result { background: none; border: none; cursor: pointer; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; padding: 2px; }
+.calc-expr { flex: 1; min-width: 0; text-align: left; color: var(--text-dim); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.calc-result { color: var(--text); font-weight: 700; font-size: 13px; white-space: nowrap; }
+.calc-expr:hover, .calc-result:hover { color: var(--accent); }
+.calc-clear { align-self: flex-start; margin-top: 4px; }
+.calc-hint { font-size: 10.5px; }
+.calc-hint code { background: var(--input); padding: 0 4px; border-radius: 4px; }
+
+/* Bookmark groups */
+.bm { display: flex; flex-direction: column; gap: 8px; height: 100%; min-height: 0; }
+.bm-groups { display: flex; flex-direction: column; gap: 6px; overflow: auto; flex: 1; min-height: 0; }
+.bm-group { border: 1px solid var(--line); border-radius: 10px; padding: 4px; background: var(--input); }
+.bm-group.drop-over { outline: 2px dashed var(--accent); outline-offset: -2px; }
+.bm-head { display: flex; align-items: center; gap: 4px; }
+.bm-toggle { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; background: none; border: none; color: var(--text); cursor: pointer; padding: 4px; text-align: left; }
+.bm-caret { font-size: 10px; color: var(--text-faint); width: 10px; }
+.bm-name { font-weight: 700; font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bm-count { font-size: 11px; }
+.bm-tools { display: flex; gap: 2px; opacity: 0; transition: opacity 0.12s; }
+.bm-group:hover .bm-tools, .bm-group:focus-within .bm-tools { opacity: 1; }
+.bm-tools .wtool { width: 22px; height: 22px; font-size: 11px; }
+.bm-links { display: flex; flex-direction: column; padding: 0 2px 2px; }
+.bm-link { display: flex; align-items: center; gap: 4px; border-radius: 6px; }
+.bm-link:hover { background: var(--card-hover, rgba(255, 255, 255, 0.05)); }
+.bm-link a { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; padding: 5px 6px; color: var(--text); text-decoration: none; font-size: 12.5px; }
+.bm-link a span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bm-link img { flex: 0 0 auto; border-radius: 3px; }
+.bm-link .svc-del { opacity: 0; }
+.bm-link:hover .svc-del { opacity: 1; }
+.bm-link[draggable='true'] { cursor: grab; }
+.bm-empty { font-size: 11px; padding: 4px 6px; }
+.bm-form { display: flex; flex-direction: column; gap: 6px; padding: 6px 2px 2px; }
+.bm-foot { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.bm-msg { font-size: 11px; }
+
+/* Notebook */
+.nb { display: flex; flex-direction: column; gap: 8px; height: 100%; min-height: 0; }
+.nb-bar { display: flex; align-items: center; gap: 4px; }
+.nb-pages { max-width: 55%; }
+.nb-mode { display: flex; gap: 4px; }
+.nb-editor { flex: 1; min-height: 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; }
+.nb-preview { flex: 1; min-height: 0; overflow: auto; padding: 2px 4px; cursor: text; }
+.md { font-size: 13px; line-height: 1.55; word-wrap: break-word; }
+.md > :first-child { margin-top: 0; }
+.md h1, .md h2, .md h3, .md h4 { margin: 0.8em 0 0.35em; line-height: 1.25; }
+.md h1 { font-size: 1.35em; } .md h2 { font-size: 1.18em; } .md h3 { font-size: 1.05em; }
+.md p { margin: 0.4em 0; }
+.md ul, .md ol { margin: 0.35em 0; padding-left: 1.4em; }
+.md li { margin: 0.1em 0; }
+.md li.md-task { list-style: none; margin-left: -1.3em; }
+.md li.md-task.done { color: var(--text-faint); text-decoration: line-through; }
+.md li.md-task input { accent-color: var(--accent); cursor: pointer; margin-right: 4px; vertical-align: -1px; }
+.md a { color: var(--accent); }
+.md code { background: var(--input); padding: 1px 5px; border-radius: 4px; font-size: 0.92em; }
+.md pre { background: var(--input); padding: 8px 10px; border-radius: 8px; overflow: auto; }
+.md pre code { background: none; padding: 0; }
+.md blockquote { margin: 0.5em 0; padding: 2px 10px; border-left: 3px solid var(--accent); color: var(--text-dim); }
+.md hr { border: none; border-top: 1px solid var(--line); margin: 0.8em 0; }
+
+/* Quote of the day */
+.quote { display: flex; flex-direction: column; height: 100%; min-height: 0; container-type: inline-size; }
+.quote-body { margin: 0; flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 6px; overflow: auto; }
+.quote-text { margin: 0; font-size: clamp(14px, 6.2cqi, 22px); font-weight: 600; line-height: 1.35; letter-spacing: -0.01em; }
+.quote-author { font-size: 12px; color: var(--text-dim); }
+.quote-tools { display: flex; align-items: center; gap: 4px; padding-top: 6px; opacity: 0.5; transition: opacity 0.12s; }
+.quote:hover .quote-tools, .quote:focus-within .quote-tools { opacity: 1; }
+.quote-tools .wtool.fav { color: var(--rose, #ff8fab); }
+.quote-edit { display: flex; flex-direction: column; gap: 6px; overflow: auto; }
+.quote-label { font-size: 11px; }
+.quote-sources { display: flex; flex-wrap: wrap; gap: 4px; }
+.quote-mine { font-size: 12px; resize: vertical; }
+
+/* GitHub activity */
+.gh { display: flex; flex-direction: column; gap: 8px; height: 100%; min-height: 0; }
+.gh-setup { justify-content: center; font-size: 12.5px; }
+.gh-head { display: flex; align-items: center; gap: 10px; }
+.gh-avatar { border-radius: 50%; flex: 0 0 auto; }
+.gh-who { display: flex; flex-direction: column; min-width: 0; }
+.gh-name { color: var(--text); font-weight: 700; font-size: 14px; text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gh-name:hover { color: var(--accent); }
+.gh-sub { font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gh-err { margin: 0 !important; }
+.gh-spark { display: flex; align-items: flex-end; gap: 3px; height: 34px; padding: 2px 0; }
+.gh-bar { flex: 1; background: var(--ok, #4fd1a5); border-radius: 3px 3px 1px 1px; min-height: 3px; }
+.gh-bar.zero { background: var(--line); }
+.gh-list { display: flex; flex-direction: column; overflow: auto; flex: 1; min-height: 0; margin: 0 -4px; }
+.gh-row { display: flex; align-items: flex-start; gap: 8px; padding: 6px 4px; border-radius: 8px; color: var(--text); text-decoration: none; }
+.gh-row:hover { background: var(--input); }
+.gh-icon { width: 18px; text-align: center; color: var(--text-dim); flex: 0 0 auto; font-size: 13px; }
+.gh-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.gh-text { font-size: 12.5px; line-height: 1.35; }
+.gh-repo { font-weight: 700; }
+.gh-detail { font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gh-when { font-size: 10.5px; white-space: nowrap; }

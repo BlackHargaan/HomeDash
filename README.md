@@ -41,6 +41,19 @@ fetching and homelab service checks. No accounts, no tracking.
     address”*, refreshed every 30 min), and **export** back to `.ics`.
   - **Natural-language add** — “Lunch with Sam tomorrow 1pm” becomes an event.
 - **Tasks** — due dates, priorities, filters, and a running "left" count.
+- **Search bar** — Google, DuckDuckGo, YouTube, Wikipedia, GitHub… or your own
+  engine; `!yt cats`-style shortcuts, URLs open directly, press <kbd>/</kbd> to focus.
+- **Calculator & converter** — safe maths (`2 * (3 + 4)^2`, `15% of 80`, `ans / 2`)
+  and unit conversions (`5 km to mi`, `72 f to c`, `3 cups to ml`, `1.5 GiB to MB`).
+- **RSS reader** — RSS and Atom feeds merged newest-first, with unread tracking.
+  Feeds are fetched through the HomeDash server when it's running (most sites
+  block browser requests).
+- **Bookmark groups** — collapsible groups, drag links between them, and import
+  the `bookmarks.html` your browser exports.
+- **Notebook** — multiple Markdown pages with preview and clickable checklists.
+- **Quote of the day** — a new quote daily, favorites, or your own collection.
+- **GitHub activity** — recent public pushes, PRs, issues and stars for any user,
+  with a 14-day activity strip.
 - **Today panel** — next event, top tasks and habits due, at a glance.
 - **Habit tracker** — 7-day grid with streaks 🔥.
 - **Pomodoro** — focus/break cycles with a progress ring; feeds the Stats widget.
