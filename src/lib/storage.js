@@ -35,6 +35,24 @@ export function usePersistentState(key, initial) {
     return readStore(key, resolved)
   })
   const first = useRef(true)
+  const initialRef = useRef(initial)
+
+  // Changes made outside React (the AI assistant) are picked up live; a
+  // removed key falls back to the initial value.
+  useEffect(() => {
+    const onExternal = (e) => {
+      if (!e.detail?.keys?.includes(key)) return
+      const raw = localStorage.getItem(PREFIX + key)
+      if (raw == null) {
+        const init = initialRef.current
+        setState(typeof init === 'function' ? init() : init)
+        return
+      }
+      try { setState(JSON.parse(raw)) } catch { /* ignore */ }
+    }
+    window.addEventListener('homedash:external', onExternal)
+    return () => window.removeEventListener('homedash:external', onExternal)
+  }, [key])
 
   useEffect(() => {
     if (first.current) {
@@ -45,6 +63,22 @@ export function usePersistentState(key, initial) {
   }, [key, state])
 
   return [state, setState]
+}
+
+// Apply a set of key → value changes from outside React (undefined removes
+// the key) and tell the mounted hooks to reload them. Goes through writeStore,
+// so server/cloud sync pushes the change as usual.
+export function applyExternalChanges(changes) {
+  const keys = Object.keys(changes)
+  for (const key of keys) {
+    if (changes[key] === undefined) {
+      try { localStorage.removeItem(PREFIX + key) } catch { /* ignore */ }
+      window.dispatchEvent(new CustomEvent('homedash:change', { detail: { key } }))
+    } else {
+      writeStore(key, changes[key])
+    }
+  }
+  window.dispatchEvent(new CustomEvent('homedash:external', { detail: { keys } }))
 }
 
 // A per-widget scoped store: each widget instance gets its own key space so

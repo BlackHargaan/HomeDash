@@ -5,7 +5,7 @@ import { parseNaturalEvent } from '../lib/nlp.js'
 
 // ⌘K / Ctrl-K launcher: fuzzy-filter a list of actions, or drop into a small
 // input sub-mode for "New task" / "New board".
-export default function CommandPalette({ onClose, onAddWidget, onSettings }) {
+export default function CommandPalette({ onClose, onAddWidget, onSettings, onAsk }) {
   const dash = useDashboard()
   const [query, setQuery] = useState('')
   const [mode, setMode] = useState(null) // null | { kind, label, placeholder, run }
@@ -32,6 +32,10 @@ export default function CommandPalette({ onClose, onAddWidget, onSettings }) {
             if (ev && ev.start) { dash.setEvents((e) => [...e, ev]); onClose() }
           },
         }),
+      },
+      {
+        id: 'ask', icon: '✨', label: 'Ask the assistant', hint: 'Chat about your day (⌘J)',
+        run: () => { onClose(); onAsk?.() },
       },
       {
         id: 'add-widget', icon: '➕', label: 'Add widget…', hint: 'Open the widget catalog',
@@ -67,13 +71,18 @@ export default function CommandPalette({ onClose, onAddWidget, onSettings }) {
       })
     }
     return list
-  }, [dash, onAddWidget, onSettings, onClose])
+  }, [dash, onAddWidget, onSettings, onClose, onAsk])
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
     if (!q) return commands
-    return commands.filter((c) => c.label.toLowerCase().includes(q) || c.hint.toLowerCase().includes(q))
-  }, [commands, query])
+    const hits = commands.filter((c) => c.label.toLowerCase().includes(q) || c.hint.toLowerCase().includes(q))
+    // Anything longer than a word can go straight to the assistant.
+    if (onAsk && q.length > 3) {
+      hits.push({ id: 'ask-query', icon: '✨', label: `Ask: “${query.trim()}”`, hint: 'Send to the assistant', run: () => { onClose(); onAsk(query.trim()) } })
+    }
+    return hits
+  }, [commands, query, onAsk, onClose])
 
   useEffect(() => { setSel(0) }, [query])
 

@@ -3,3 +3,4 @@ release
 # Copied in by scripts/prepare.mjs
 web
 server
+shared

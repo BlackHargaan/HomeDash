@@ -24,6 +24,7 @@ import BookmarksWidget from './BookmarksWidget.jsx'
 import NotebookWidget from './NotebookWidget.jsx'
 import QuoteWidget from './QuoteWidget.jsx'
 import GitHubWidget from './GitHubWidget.jsx'
+import AssistantWidget from './AssistantWidget.jsx'
 
 export const WIDGET_COMPONENTS = {
   clock: ClockWidget,
@@ -50,4 +51,5 @@ export const WIDGET_COMPONENTS = {
   notebook: NotebookWidget,
   quote: QuoteWidget,
   github: GitHubWidget,
+  assistant: AssistantWidget,
 }

@@ -165,6 +165,8 @@ function showWindow() {
 function createTray() {
   try {
     const img = nativeImage.createFromPath(iconPath(process.platform === 'darwin' ? 'tray-mac.png' : 'tray.png'))
+    // A monochrome template image lets macOS tint it for light/dark menu bars.
+    if (process.platform === 'darwin') img.setTemplateImage(true)
     tray = new Tray(img)
   } catch (e) {
     console.warn('Tray unavailable:', e.message)

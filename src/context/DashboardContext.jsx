@@ -1,5 +1,5 @@
 import { createContext, useContext, useCallback, useEffect, useMemo, useState } from 'react'
-import { usePersistentState, readStore, uid } from '../lib/storage.js'
+import { usePersistentState, readStore, writeStore, uid } from '../lib/storage.js'
 import { WIDGET_TYPES, widgetMeta } from '../widgets/registry.js'
 import { DEFAULT_CALENDARS } from '../widgets/calendar/helpers.js'
 import { fontStack } from '../lib/appearance.js'
@@ -76,6 +76,12 @@ export function DashboardProvider({ children }) {
     root.dataset.density = density
     root.style.setProperty('--font', fontStack(font))
   }, [theme, accent, wallpaper, wallpaperImage, density, font])
+
+  // Let the server (MCP, push) know the user's time zone.
+  useEffect(() => {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
+    if (tz && readStore('timezone', null) !== tz) writeStore('timezone', tz)
+  }, [])
 
   useEffect(() => {
     const root = document.documentElement

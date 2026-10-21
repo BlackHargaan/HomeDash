@@ -13,14 +13,17 @@ COPY . .
 RUN npm run build
 
 # ---- Stage 2: run the HomeDash server (serves the app + /api) ----
-# The server has no npm dependencies, so only the built app, the server code
-# and package.json (for the version number) are copied.
+# Only the server's runtime dependency (the Anthropic SDK, for the AI
+# assistant) is installed; the web app is already bundled into dist/.
 FROM node:20-alpine AS runtime
 WORKDIR /app
 
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force
+
 COPY --from=build /app/dist ./dist
 COPY server ./server
-COPY package.json ./
+COPY shared ./shared
 
 # Port 80 inside the container keeps existing "8080:80" mappings working.
 ENV NODE_ENV=production \

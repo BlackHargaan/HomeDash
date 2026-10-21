@@ -4,6 +4,7 @@ import App from './App.jsx'
 import { DashboardProvider } from './context/DashboardContext.jsx'
 import { SyncProvider } from './context/SyncContext.jsx'
 import { ServerProvider } from './context/ServerContext.jsx'
+import { AssistantProvider } from './context/AssistantContext.jsx'
 import 'react-grid-layout/css/styles.css'
 import 'react-resizable/css/styles.css'
 import './styles/index.css'
@@ -17,7 +18,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <ServerProvider>
       <DashboardProvider>
         <SyncProvider>
-          <App />
+          <AssistantProvider>
+            <App />
+          </AssistantProvider>
         </SyncProvider>
       </DashboardProvider>
     </ServerProvider>

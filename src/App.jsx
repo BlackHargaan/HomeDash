@@ -10,6 +10,8 @@ import AddWidgetModal from './components/AddWidgetModal.jsx'
 import SettingsModal from './components/SettingsModal.jsx'
 import CommandPalette from './components/CommandPalette.jsx'
 import Reminders from './components/Reminders.jsx'
+import AssistantPanel from './components/AssistantPanel.jsx'
+import { useAssistant } from './context/AssistantContext.jsx'
 
 export default function App() {
   const { editMode, setEditMode } = useDashboard()
@@ -23,6 +25,20 @@ export default function App() {
   const [showAdd, setShowAdd] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [showPalette, setShowPalette] = useState(false)
+  const [settingsSection, setSettingsSection] = useState(null)
+  const assistant = useAssistant()
+  const openAssistant = (text) => {
+    assistant.setPanelOpen(true)
+    if (text) assistant.send(text)
+  }
+  const openSettings = (section = null) => { setSettingsSection(section); setShowSettings(true) }
+
+  // Widgets can ask for a settings section (e.g. the Assistant's "Set up").
+  useEffect(() => {
+    const onOpen = (e) => openSettings(e.detail?.section)
+    window.addEventListener('homedash:open-settings', onOpen)
+    return () => window.removeEventListener('homedash:open-settings', onOpen)
+  }, [])
 
   // Home-screen shortcuts from the web app manifest: /?action=add-widget|settings
   useEffect(() => {
@@ -42,10 +58,14 @@ export default function App() {
         e.preventDefault()
         setShowPalette((v) => !v)
       }
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'j') {
+        e.preventDefault()
+        assistant.setPanelOpen((v) => !v)
+      }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [])
+  }, [assistant.setPanelOpen]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (server.status === 'checking') return <div className="boot-splash" />
   if (server.status === 'locked') return <LoginScreen />
@@ -57,7 +77,7 @@ export default function App() {
       <div className="app">
         <header className="topbar">
           <div className="brand">
-            <div className="brand-logo">🗂️</div>
+            <img className="brand-logo" src="/icons/icon.svg" alt="" width="42" height="42" />
             <div>
               <h1>HomeDash</h1>
               <p className="sub">Your day, organized.</p>
@@ -86,6 +106,9 @@ export default function App() {
               <span className={`sync-badge ${badge.state}`}>☁</span>
             </button>
           )}
+          <button className="btn ghost sm ai-launch" onClick={() => assistant.setPanelOpen(true)} title="Assistant (⌘J)" aria-label="Open assistant">
+            ✨
+          </button>
           <button className="btn ghost sm" onClick={() => setShowPalette(true)} title="Command palette (⌘K)">
             <span>⌘</span>K
           </button>
@@ -114,12 +137,14 @@ export default function App() {
       </div>
 
       {showAdd && <AddWidgetModal onClose={() => setShowAdd(false)} />}
-      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
+      {showSettings && <SettingsModal section={settingsSection} onClose={() => { setShowSettings(false); setSettingsSection(null) }} />}
+      <AssistantPanel onOpenSettings={() => openSettings('ai')} />
       {showPalette && (
         <CommandPalette
           onClose={() => setShowPalette(false)}
           onAddWidget={() => setShowAdd(true)}
           onSettings={() => setShowSettings(true)}
+          onAsk={openAssistant}
         />
       )}
     </>

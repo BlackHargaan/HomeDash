@@ -5,7 +5,7 @@
 // Caching: page navigations are network-first (so a new version shows up on the
 // next load) with the cached shell as the offline fallback; hashed /assets/ are
 // cache-first; the API is never cached.
-const CACHE = 'homedash-v1'
+const CACHE = 'homedash-v2'
 const SHELL = ['/', '/manifest.webmanifest', '/icons/icon.svg', '/icons/icon-192.png']
 
 self.addEventListener('install', (event) => {
