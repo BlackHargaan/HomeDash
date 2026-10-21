@@ -85,6 +85,18 @@ export const WIDGET_TYPES = {
     description: 'Live time across multiple cities and time zones.',
     layout: { w: 3, h: 5, minW: 2, minH: 3 },
   },
+  status: {
+    name: 'Service Status',
+    icon: '🟢',
+    description: 'Watch your homelab services — up/down and response time.',
+    layout: { w: 3, h: 5, minW: 2, minH: 3 },
+  },
+  docker: {
+    name: 'Docker',
+    icon: '🐳',
+    description: 'Your containers at a glance, with optional restart buttons.',
+    layout: { w: 4, h: 6, minW: 3, minH: 3 },
+  },
   embed: {
     name: 'Custom Embed',
     icon: '🧩',
@@ -110,6 +122,7 @@ export const FLOW_HEIGHTS = {
   clock: 150, weather: 250, calendar: 400, tasks: 320, notes: 220,
   links: 210, habits: 250, pomodoro: 300, stats: 220, today: 340,
   countdown: 175, worldclock: 250, kanban: 340, embed: 320, iframeStat: 160,
+  status: 260, docker: 300,
 }
 export function flowHeight(type) {
   return FLOW_HEIGHTS[type] || 240

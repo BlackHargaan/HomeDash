@@ -6,5 +6,15 @@ export default defineConfig({
   server: {
     port: 5173,
     host: true,
+    // Forward the API to a HomeDash server started with `npm run server` in a
+    // second terminal. Without it, /api calls fail and the app falls back to
+    // browser-only mode.
+    proxy: {
+      '/api': { target: 'http://localhost:8787', changeOrigin: false },
+    },
+  },
+  test: {
+    // Server tests spin up real HTTP servers; give them room on slow CI.
+    testTimeout: 15000,
   },
 })

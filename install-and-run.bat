@@ -39,16 +39,28 @@ if not exist "node_modules" (
   echo.
 )
 
-echo Starting HomeDash at http://localhost:5173
+REM --- Build the app (picks up any changes after a git pull) ---
+echo Building HomeDash...
+call npm run build
+if errorlevel 1 (
+  echo.
+  echo [ERROR] Build failed. See the messages above.
+  pause
+  exit /b 1
+)
+echo.
+
+echo Starting HomeDash at http://localhost:8787
+echo Your dashboard is saved in the "data" folder next to this script.
 echo A browser tab will open shortly. Keep this window open while you use it.
 echo Press Ctrl+C or close this window to stop.
 echo.
 
-REM Open the browser a few seconds after the dev server starts booting.
-start "" cmd /c "timeout /t 4 >nul & start "" http://localhost:5173"
+REM Open the browser a couple of seconds after the server starts.
+start "" cmd /c "timeout /t 3 >nul & start "" http://localhost:8787"
 
-REM Run the dev server (blocks until you stop it).
-call npm run dev
+REM Run the HomeDash server (blocks until you stop it).
+call npm run server
 
 echo.
 echo HomeDash stopped.

@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useDashboard } from './context/DashboardContext.jsx'
 import { useSync } from './context/SyncContext.jsx'
+import { useServer } from './context/ServerContext.jsx'
+import LoginScreen from './components/LoginScreen.jsx'
 import Grid from './components/Grid.jsx'
 import BoardTabs from './components/BoardTabs.jsx'
 import AddWidgetModal from './components/AddWidgetModal.jsx'
@@ -11,6 +13,11 @@ import Reminders from './components/Reminders.jsx'
 export default function App() {
   const { editMode, setEditMode } = useDashboard()
   const { user, status } = useSync()
+  const server = useServer()
+  // Header cloud badge: the self-hosted server takes precedence over Supabase.
+  const badge = server.status === 'ready'
+    ? { state: server.sync.state, label: 'Server sync' }
+    : user ? { state: status, label: 'Cloud sync' } : null
   const [showAdd, setShowAdd] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [showPalette, setShowPalette] = useState(false)
@@ -25,6 +32,9 @@ export default function App() {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [])
+
+  if (server.status === 'checking') return <div className="boot-splash" />
+  if (server.status === 'locked') return <LoginScreen />
 
   return (
     <>
@@ -44,13 +54,13 @@ export default function App() {
 
           <span className="topbar-spacer" />
 
-          {user && (
+          {badge && (
             <button
               className="btn ghost sm"
               onClick={() => setShowSettings(true)}
-              title={`Cloud sync: ${status}`}
+              title={`${badge.label}: ${badge.state}`}
             >
-              <span className={`sync-badge ${status}`}>☁</span>
+              <span className={`sync-badge ${badge.state}`}>☁</span>
             </button>
           )}
           <button className="btn ghost sm" onClick={() => setShowPalette(true)} title="Command palette (⌘K)">

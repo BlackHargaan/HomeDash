@@ -12,17 +12,29 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
-# ---- Stage 2: serve with nginx ----
-FROM nginx:1.27-alpine AS runtime
+# ---- Stage 2: run the HomeDash server (serves the app + /api) ----
+# The server has no npm dependencies, so only the built app, the server code
+# and package.json (for the version number) are copied.
+FROM node:20-alpine AS runtime
+WORKDIR /app
 
-# Static assets and SPA-friendly nginx config.
-COPY --from=build /app/dist /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=build /app/dist ./dist
+COPY server ./server
+COPY package.json ./
+
+# Port 80 inside the container keeps existing "8080:80" mappings working.
+ENV NODE_ENV=production \
+    PORT=80 \
+    DATA_DIR=/data \
+    STATIC_DIR=/app/dist
+
+# Your dashboard is stored here — mount a named volume to keep it across
+# container re-creation.
+VOLUME ["/data"]
 
 EXPOSE 80
 
-# Lightweight liveness check.
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s \
-  CMD wget -qO- http://localhost/ >/dev/null 2>&1 || exit 1
+  CMD wget -qO- http://127.0.0.1/api/health >/dev/null 2>&1 || exit 1
 
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["node", "server/index.js"]

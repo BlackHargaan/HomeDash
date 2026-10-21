@@ -28,3 +28,33 @@ jobs:
 
       - name: Build
         run: npm run build
+
+  # Build the real container image and make sure it serves the app and API, so
+  # a change can't break the published image (and your Portainer deploy).
+  docker-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image
+        run: docker build -t homedash:ci .
+
+      - name: Smoke test
+        run: |
+          docker run -d --name hd -p 8080:80 -v hd-data:/data homedash:ci
+          for i in $(seq 1 30); do
+            curl -fsS http://localhost:8080/api/health && break
+            sleep 1
+          done
+          echo
+          curl -fsS http://localhost:8080/api/health | grep -q '"name":"homedash"'
+          curl -fsS http://localhost:8080/ | grep -qi '<div id="root">'
+          curl -fsS -X PUT -H 'Content-Type: application/json' \
+            -d '{"data":{"ci":true}}' http://localhost:8080/api/state
+          echo
+          curl -fsS http://localhost:8080/api/state | grep -q '"ci":true'
+          docker inspect --format '{{json .State.Health}}' hd || true
+
+      - name: Container logs
+        if: always()
+        run: docker logs hd || true

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useWidgetState } from '../lib/storage.js'
+import { smartFetch } from '../lib/server.js'
 
 // A configurable "integration tile": fetch a JSON endpoint, drill into it with a
 // dot-path, and display the value with an optional label/prefix/suffix. Refreshes
@@ -30,7 +31,7 @@ export default function IframeStatWidget({ widget }) {
     if (!cfg.url) return
     setStatus('loading')
     try {
-      const r = await fetch(cfg.url)
+      const r = await smartFetch(cfg.url)
       const j = await r.json()
       const v = drill(j, cfg.path)
       setValue(typeof v === 'object' ? JSON.stringify(v) : String(v))
@@ -75,7 +76,7 @@ export default function IframeStatWidget({ widget }) {
           <div className="field"><label>Refresh (s)</label><input className="input" type="number" value={draft.refreshSec} onChange={(e) => setDraft({ ...draft, refreshSec: e.target.value })} /></div>
         </div>
         <button className="btn primary sm" type="submit">Save integration</button>
-        <p className="faint" style={{ marginTop: 8, fontSize: 12 }}>The endpoint must allow cross-origin (CORS) requests.</p>
+        <p className="faint" style={{ marginTop: 8, fontSize: 12 }}>With the HomeDash server any URL works; without it, the endpoint must allow cross-origin (CORS) requests.</p>
       </form>
     )
   }
@@ -91,7 +92,7 @@ export default function IframeStatWidget({ widget }) {
         <button className="wtool" onClick={load} title="Refresh">↻</button>
         <button className="wtool" onClick={() => setCfg({ ...cfg, url: '' })} title="Edit">✎</button>
       </div>
-      {status === 'error' && <div className="faint istat-err">Fetch failed (CORS?)</div>}
+      {status === 'error' && <div className="faint istat-err">Fetch failed</div>}
     </div>
   )
 }
