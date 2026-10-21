@@ -72,7 +72,11 @@ npm install
 npm run dev      # start the dev server (http://localhost:5173)
 npm run build    # production build → dist/
 npm run preview  # preview the production build
+npm test         # run the unit tests (Vitest)
 ```
+
+Every pull request runs the tests and a production build in GitHub Actions
+(`.github/workflows/ci.yml`).
 
 Requires Node 18+.
 
