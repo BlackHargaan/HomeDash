@@ -1,9 +1,9 @@
 {
   "name": "homedash-desktop",
   "productName": "HomeDash",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
-  "description": "HomeDash desktop app \u2014 your dashboard in its own window, with the HomeDash server built in.",
+  "description": "HomeDash desktop app — your dashboard in its own window, with the HomeDash server built in.",
   "author": "HomeDash",
   "license": "MIT",
   "main": "main.mjs",
