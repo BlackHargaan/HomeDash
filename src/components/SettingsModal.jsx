@@ -5,6 +5,8 @@ import { exportAllData, importAllData } from '../lib/storage.js'
 import { requestNotifyPermission, notifyPermission, notifySupported } from '../lib/notify.js'
 import CloudSyncPanel from './CloudSyncPanel.jsx'
 import ServerPanel from './ServerPanel.jsx'
+import DesktopPanel from './DesktopPanel.jsx'
+import { desktop } from '../lib/desktop.js'
 import Modal from './Modal.jsx'
 
 const WALLPAPERS = [
@@ -61,6 +63,8 @@ export default function SettingsModal({ onClose }) {
       onClose={onClose}
       footer={<button className="btn primary" onClick={onClose}>Done</button>}
     >
+      {desktop && <DesktopPanel first />}
+
       <div className="field">
         <label>Your name (for the greeting)</label>
         <input className="input" value={userName} onChange={(e) => setUserName(e.target.value)} placeholder="e.g. Alex" />

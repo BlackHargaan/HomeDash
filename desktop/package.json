@@ -1,0 +1,93 @@
+{
+  "name": "homedash-desktop",
+  "productName": "HomeDash",
+  "version": "0.1.0",
+  "private": true,
+  "description": "HomeDash desktop app \u2014 your dashboard in its own window, with the HomeDash server built in.",
+  "author": "HomeDash",
+  "license": "MIT",
+  "main": "main.mjs",
+  "devDependencies": {
+    "electron": "^33.4.11",
+    "electron-builder": "^25.1.8"
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.9"
+  },
+  "scripts": {
+    "prepare:app": "node scripts/prepare.mjs",
+    "start": "npm --prefix .. run build && node scripts/prepare.mjs && electron .",
+    "dist": "node scripts/prepare.mjs && electron-builder --publish never",
+    "dist:dir": "node scripts/prepare.mjs && electron-builder --dir --publish never",
+    "release": "node scripts/prepare.mjs && electron-builder --publish always",
+    "smoke": "node scripts/smoke.mjs"
+  },
+  "build": {
+    "appId": "io.github.blackhargaan.homedash",
+    "productName": "HomeDash",
+    "artifactName": "HomeDash-${version}-${os}-${arch}.${ext}",
+    "asar": false,
+    "directories": {
+      "output": "release",
+      "buildResources": "icons"
+    },
+    "files": [
+      "main.mjs",
+      "preload.cjs",
+      "package.json",
+      "icons/**",
+      "web/**",
+      "server/**"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "icons/icon.png"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "deleteAppDataOnUninstall": false
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "icon": "icons/icon.png",
+      "category": "public.app-category.productivity",
+      "identity": null
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "icons/icon.png",
+      "category": "Utility",
+      "maintainer": "HomeDash",
+      "executableName": "homedash"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "BlackHargaan",
+      "repo": "HomeDash",
+      "releaseType": "release"
+    }
+  }
+}

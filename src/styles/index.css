@@ -429,3 +429,18 @@ textarea.input { resize: vertical; min-height: 60px; line-height: 1.5; }
 .section-sep { margin-top: 20px; border-top: 1px solid var(--line); padding-top: 16px; }
 .section-sep code { background: var(--input); padding: 1px 5px; border-radius: 4px; font-size: 11px; }
 .login-card .btn { justify-content: center; }
+
+/* Desktop app settings */
+.desk-version { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 14px; }
+.desk-modes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
+@media (max-width: 560px) { .desk-modes { grid-template-columns: 1fr; } }
+.desk-mode {
+  display: flex; gap: 8px; align-items: flex-start; padding: 10px; border-radius: 12px; cursor: pointer;
+  border: 1px solid var(--card-border); background: var(--input); font-size: 13px;
+}
+.desk-mode.on { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+.desk-mode input { margin-top: 2px; accent-color: var(--accent); }
+.desk-mode > span { display: flex; flex-direction: column; gap: 2px; }
+.desk-mode .faint { font-size: 12px; }
+.update-badge { border-color: var(--accent); color: var(--accent); }
+.desk-first { padding-bottom: 16px; margin-bottom: 16px; border-bottom: 1px solid var(--line); }

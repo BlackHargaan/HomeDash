@@ -1,0 +1,5 @@
+node_modules
+release
+# Copied in by scripts/prepare.mjs
+web
+server
