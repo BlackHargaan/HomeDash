@@ -100,6 +100,46 @@ dependencies on first run, builds the app, starts the HomeDash server and opens
 `http://localhost:8787`. Data is saved in the `data` folder next to it.
 (Node.js must be installed first.)
 
+## Desktop apps (Windows, macOS, Linux)
+
+Download the installer for your system from the
+[latest release](https://github.com/BlackHargaan/HomeDash/releases/latest):
+
+| System | File | First launch |
+|---|---|---|
+| Windows | `HomeDash-x.y.z-win-x64.exe` | SmartScreen may warn (the app isn't code-signed yet): **More info → Run anyway**. |
+| macOS | `HomeDash-x.y.z-mac-arm64.dmg` (Apple Silicon) or `…-mac-x64.dmg` (Intel) | Drag to Applications, then **right-click → Open** the first time. |
+| Linux | `HomeDash-x.y.z-linux-x86_64.AppImage` | `chmod +x` it, then run. |
+
+**Two modes** (Settings → Desktop app):
+
+- **Standalone** (default) — the HomeDash server runs inside the app and stores
+  everything on that computer. Sync, the iCal/RSS proxy and status checks all
+  work, no setup.
+- **Connect to my server** — opens your self-hosted HomeDash (e.g.
+  `http://192.168.1.10:8080`), so desktop and web share the same data.
+  Switching back to standalone brings your local data back.
+
+The app keeps running in the tray when you close the window, so reminders keep
+firing (turn this off in Settings), and can open at sign-in on Windows/macOS.
+
+**Updates:** HomeDash checks for new releases on start and every 6 hours; an
+**⬆ Update** badge appears when one is ready. On Windows and Linux (AppImage),
+**Restart & update** installs it in place. macOS builds aren't signed yet, so
+there the button opens the download page instead.
+
+**Publishing a release** (maintainers): bump nothing by hand — just push a tag:
+
+```bash
+git tag v0.2.0
+git push origin v0.2.0
+```
+
+`.github/workflows/release.yml` sets the version from the tag, builds on
+Windows, macOS and Linux runners, and attaches the installers plus update
+metadata to the GitHub Release. To develop the desktop app locally:
+`cd desktop && npm install && npm start`.
+
 ## Self-hosting with Docker
 
 The image runs the HomeDash server (`node:20-alpine`, no npm dependencies at
@@ -193,6 +233,10 @@ the image on the host using the `Dockerfile`.
 ## Architecture
 
 ```
+desktop/
+  main.mjs                 # Electron main: window, tray, built-in server, updates
+  preload.cjs              # the small bridge the web app uses (window.homedashDesktop)
+  scripts/                 # prepare (copy app + server in), smoke test
 server/
   app.js                   # HomeDash server: static app + /api (no dependencies)
   index.js                 # CLI entry, reads env vars

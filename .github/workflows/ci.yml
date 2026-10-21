@@ -58,3 +58,33 @@ jobs:
       - name: Container logs
         if: always()
         run: docker logs hd || true
+
+  # Package the Linux desktop app and launch it, so a change can't ship a
+  # desktop build that fails to start.
+  desktop:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            desktop/package-lock.json
+
+      - name: Build the web app
+        run: |
+          npm ci
+          npm run build
+
+      - name: Package (unpacked, no installer)
+        working-directory: desktop
+        run: |
+          npm ci
+          npm run dist:dir
+
+      - name: Launch smoke test
+        working-directory: desktop
+        run: xvfb-run -a node scripts/smoke.mjs

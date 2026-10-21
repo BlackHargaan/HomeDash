@@ -3,6 +3,7 @@ import { useDashboard } from './context/DashboardContext.jsx'
 import { useSync } from './context/SyncContext.jsx'
 import { useServer } from './context/ServerContext.jsx'
 import LoginScreen from './components/LoginScreen.jsx'
+import { useDesktopUpdate, updateReady } from './lib/desktop.js'
 import Grid from './components/Grid.jsx'
 import BoardTabs from './components/BoardTabs.jsx'
 import AddWidgetModal from './components/AddWidgetModal.jsx'
@@ -14,6 +15,7 @@ export default function App() {
   const { editMode, setEditMode } = useDashboard()
   const { user, status } = useSync()
   const server = useServer()
+  const desktopUpdate = useDesktopUpdate()
   // Header cloud badge: the self-hosted server takes precedence over Supabase.
   const badge = server.status === 'ready'
     ? { state: server.sync.state, label: 'Server sync' }
@@ -54,6 +56,15 @@ export default function App() {
 
           <span className="topbar-spacer" />
 
+          {updateReady(desktopUpdate) && (
+            <button
+              className="btn sm update-badge"
+              onClick={() => setShowSettings(true)}
+              title={`HomeDash ${desktopUpdate.version} is available`}
+            >
+              ⬆ Update
+            </button>
+          )}
           {badge && (
             <button
               className="btn ghost sm"
