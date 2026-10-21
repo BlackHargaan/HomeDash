@@ -57,7 +57,7 @@ export default function App() {
       <div className="app">
         <header className="topbar">
           <div className="brand">
-            <div className="brand-logo">🗂️</div>
+            <img className="brand-logo" src="/icons/icon.svg" alt="" width="42" height="42" />
             <div>
               <h1>HomeDash</h1>
               <p className="sub">Your day, organized.</p>

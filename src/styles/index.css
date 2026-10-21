@@ -132,10 +132,8 @@ body { background: var(--bg); }
 }
 .brand { display: flex; align-items: center; gap: 12px; }
 .brand-logo {
-  width: 42px; height: 42px; border-radius: 13px;
-  display: grid; place-items: center; font-size: 22px;
-  background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 40%, #6d5cff));
-  box-shadow: 0 6px 20px -6px var(--accent);
+  width: 42px; height: 42px; display: block; flex: 0 0 auto;
+  filter: drop-shadow(0 6px 14px rgba(20, 16, 60, 0.45));
 }
 .brand h1 { font-size: 20px; margin: 0; font-weight: 700; letter-spacing: -0.02em; }
 .brand .sub { font-size: 12px; color: var(--text-dim); margin: 0; }
@@ -406,7 +404,7 @@ textarea.input { resize: vertical; min-height: 60px; line-height: 1.5; }
   .app { padding: 16px 14px 48px; }
   .topbar { gap: 10px; margin-bottom: 16px; }
   .brand .sub { display: none; }
-  .brand-logo { width: 36px; height: 36px; font-size: 18px; }
+  .brand-logo { width: 36px; height: 36px; }
   .brand h1 { font-size: 18px; }
   /* Board tabs scroll horizontally instead of wrapping the whole bar. */
   .boardtabs { flex-wrap: nowrap; overflow-x: auto; max-width: 44vw; scrollbar-width: none; }
@@ -428,7 +426,7 @@ textarea.input { resize: vertical; min-height: 60px; line-height: 1.5; }
 }
 .login-card h1 { margin: 4px 0 0; font-size: 22px; letter-spacing: -0.02em; }
 .login-card p { margin: 0 0 6px; font-size: 13px; }
-.login-logo { margin: 0 auto; }
+.login-logo { margin: 0 auto; width: 56px; height: 56px; }
 .section-sep { margin-top: 20px; border-top: 1px solid var(--line); padding-top: 16px; }
 .section-sep code { background: var(--input); padding: 1px 5px; border-radius: 4px; font-size: 11px; }
 .login-card .btn { justify-content: center; }

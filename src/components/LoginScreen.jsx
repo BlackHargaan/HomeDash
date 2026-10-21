@@ -25,7 +25,7 @@ export default function LoginScreen() {
   return (
     <div className="login-wrap">
       <form className="login-card glass" onSubmit={submit}>
-        <div className="brand-logo login-logo">🗂️</div>
+        <img className="brand-logo login-logo" src="/icons/icon.svg" alt="" width="56" height="56" />
         <h1>HomeDash</h1>
         <p className="muted">This dashboard is password protected.</p>
         <input
