@@ -13,6 +13,10 @@ export default defineConfig({
       '/api': { target: 'http://localhost:8787', changeOrigin: false },
     },
   },
+  build: {
+    // The Notebook's rich-text editor is one lazily loaded chunk (~540 kB, ~170 kB gzipped).
+    chunkSizeWarningLimit: 600,
+  },
   test: {
     // Server tests spin up real HTTP servers; give them room on slow CI.
     testTimeout: 15000,

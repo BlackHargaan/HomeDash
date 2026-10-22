@@ -143,7 +143,7 @@ export const WIDGET_TYPES = {
   notebook: {
     name: 'Notebook',
     icon: '📓',
-    description: 'Markdown pages with preview and clickable checklists.',
+    description: 'Doc-style pages: type / for headings, to-dos and more.',
     layout: { w: 4, h: 6, minW: 3, minH: 4 },
   },
   quote: {
