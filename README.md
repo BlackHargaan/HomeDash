@@ -69,7 +69,11 @@ fetching and homelab service checks. No accounts, no tracking.
   block browser requests).
 - **Bookmark groups** — collapsible groups, drag links between them, and import
   the `bookmarks.html` your browser exports.
-- **Notebook** — multiple Markdown pages with preview and clickable checklists.
+- **Notebook** — doc-style pages you edit in place, like Notion or Google Docs: type
+  `/` for headings, to-do lists, quotes, code and dividers; select text for bold,
+  italic, links and more; Markdown shortcuts (`#`, `-`, `[]`, `>`) convert as you
+  type. Each page has a title and icon, and pages list in a sidebar (a switcher
+  when the widget is narrow). Copy or export any page as Markdown.
 - **Quote of the day** — a new quote daily, favorites, or your own collection.
 - **GitHub activity** — recent public pushes, PRs, issues and stars for any user,
   with a 14-day activity strip.

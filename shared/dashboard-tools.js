@@ -11,6 +11,7 @@ import { collectOccurrences, describeRecurrence } from './recurrence.js'
 import { toDateKey, fromDateKey } from './date.js'
 import { WIDGET_TYPES } from './registry.js'
 import { validate } from './schema.js'
+import { normalizePage, splitTitle, DEFAULT_ICON } from './notebook.js'
 
 export const uid = (prefix = 'id') => `${prefix}_${Math.random().toString(36).slice(2, 9)}${Date.now().toString(36).slice(-4)}`
 
@@ -188,7 +189,19 @@ function findColumn(board, ref) {
   return col
 }
 
-const titleOf = (text) => {
+// Append Markdown to a page: list items continue a list the page ends with;
+// anything else starts a new paragraph.
+const LIST_LINE = /^\s*(?:[-*+]|\d+[.)])\s/
+function appendMarkdown(body, addition) {
+  const prev = String(body || '').replace(/\s+$/, '')
+  if (!prev) return addition
+  const lastLine = prev.split('\n').at(-1)
+  const joiner = LIST_LINE.test(lastLine) && LIST_LINE.test(addition) ? '\n' : '\n\n'
+  return prev + joiner + addition
+}
+
+// Plain-text first line, for Notes widget previews.
+const firstLine = (text) => {
   const line = String(text || '').split('\n').find((l) => l.trim())
   return line ? line.replace(/^#+\s*/, '').replace(/[*_`~[\]]/g, '').trim().slice(0, 60) || 'Untitled' : 'Untitled'
 }
@@ -575,17 +588,20 @@ tool('delete_kanban_card', {
 
 tool('list_notes', {
   readOnly: true,
-  description: 'Notebook pages (Markdown) and Notes widgets, with titles and short previews.',
+  description: 'Notebook pages (titles, icons) and Notes widgets with short previews.',
   input_schema: obj({}),
   run(ws) {
     const out = []
     for (const { board, widget } of allWidgets(ws)) {
       if (widget.type === 'notebook') {
         const st = ws.get(`widget:${widget.id}`, null)
-        for (const p of st?.pages || []) out.push({ widgetId: widget.id, pageId: p.id, notebook: widgetTitle(widget), dashboard: board.name, title: titleOf(p.text), updated: p.updated ? fmtLocal(p.updated) : null, length: (p.text || '').length })
+        for (const raw of st?.pages || []) {
+          const p = normalizePage(raw)
+          out.push({ widgetId: widget.id, pageId: p.id, notebook: widgetTitle(widget), dashboard: board.name, title: p.title || 'Untitled', icon: p.icon, updated: p.updated ? fmtLocal(p.updated) : null, length: p.text.length })
+        }
       } else if (widget.type === 'notes') {
         const text = ws.get(`widget:${widget.id}`, '')
-        out.push({ widgetId: widget.id, note: widgetTitle(widget), dashboard: board.name, preview: String(text).slice(0, 160), length: String(text).length })
+        out.push({ widgetId: widget.id, note: widgetTitle(widget), title: firstLine(text), dashboard: board.name, preview: String(text).slice(0, 160), length: String(text).length })
       }
     }
     return { notes: out }
@@ -603,23 +619,25 @@ function noteTarget(ws, widgetId) {
 
 tool('read_note', {
   readOnly: true,
-  description: 'Full text of a Notebook page or a Notes widget.',
+  description: 'Full content of a Notebook page (its title, and the body as Markdown) or a Notes widget.',
   input_schema: obj({ widgetId: str('From list_notes.'), pageId: str('Notebook page id from list_notes.') }, ['widgetId']),
   run(ws, input) {
     const w = noteTarget(ws, input.widgetId)
     if (w.type === 'notes') return { text: String(ws.get(`widget:${w.id}`, '')) }
     const pages = ws.get(`widget:${w.id}`, null)?.pages || []
-    const p = pages.find((x) => x.id === input.pageId) || (!input.pageId && pages[0])
+    const p = normalizePage(pages.find((x) => x.id === input.pageId) || (!input.pageId && pages[0]))
     if (!p) fail(`No page ${input.pageId}. Use list_notes.`)
-    return { pageId: p.id, title: titleOf(p.text), text: p.text }
+    return { pageId: p.id, title: p.title || 'Untitled', icon: p.icon, text: p.text }
   },
 })
 
 tool('write_note', {
-  description: 'Write Markdown into the Notebook: create a new page, append to a page, or replace a page’s text. Also works on a Notes widget (append/replace). Checklists use "- [ ] item".',
+  description: 'Write into the Notebook: create a page, append to a page, or replace a page’s body. Write the body as Markdown — the notebook shows it as formatted rich text (headings, **bold**, lists, "- [ ] to-dos", > quotes, tables are not supported). Also works on a Notes widget (append/replace).',
   input_schema: obj({
     mode: { type: 'string', enum: ['create', 'append', 'replace'] },
-    text: str('Markdown text. For a new page, start with "# Title".', { maxLength: 20000 }),
+    text: str('Page body as Markdown.', { maxLength: 20000 }),
+    title: str('Page title (create, or rename on replace).', { maxLength: 120 }),
+    icon: str('One emoji for the page (create).', { maxLength: 8 }),
     widgetId: str('Notebook or Notes widget id (default: the only Notebook).'),
     pageId: str('Page to append to or replace (Notebook).'),
   }, ['mode', 'text']),
@@ -635,17 +653,20 @@ tool('write_note', {
       return { summary: `${input.mode === 'append' ? 'Added to' : 'Rewrote'} ${widgetTitle(w)}` }
     }
     const st = ws.get(key, null) || { pages: [] }
-    const pages = st.pages || []
+    const pages = (st.pages || []).map(normalizePage)
     if (input.mode === 'create') {
-      const page = { id: uid('pg'), text: input.text, updated: now }
+      // A leading "# Heading" becomes the title when none is given.
+      const split = input.title ? { title: input.title, body: input.text } : splitTitle(input.text)
+      const page = { id: uid('pg'), title: split.title.trim() || 'Untitled', icon: input.icon || DEFAULT_ICON, text: split.body, updated: now }
       ws.set(key, { ...st, pages: [page, ...pages], current: page.id })
-      return { created: { pageId: page.id, title: titleOf(page.text) }, summary: `Created page “${titleOf(page.text)}”` }
+      return { created: { pageId: page.id, title: page.title }, summary: `Created page “${page.title}”` }
     }
     const page = pages.find((p) => p.id === input.pageId) || (!input.pageId && pages.length === 1 ? pages[0] : null)
     if (!page) fail(input.pageId ? `No page ${input.pageId}.` : 'Pass pageId (see list_notes), or use mode "create".')
-    const text = input.mode === 'append' ? `${page.text.replace(/\s+$/, '')}\n${input.text}` : input.text
-    ws.set(key, { ...st, pages: pages.map((p) => (p.id === page.id ? { ...p, text, updated: now } : p)) })
-    return { pageId: page.id, summary: `${input.mode === 'append' ? 'Added to' : 'Rewrote'} “${titleOf(text)}”` }
+    const text = input.mode === 'append' ? appendMarkdown(page.text, input.text) : input.text
+    const title = input.mode === 'replace' && input.title ? input.title.trim() : page.title
+    ws.set(key, { ...st, pages: pages.map((p) => (p.id === page.id ? { ...p, title, text, updated: now } : p)) })
+    return { pageId: page.id, summary: `${input.mode === 'append' ? 'Added to' : 'Rewrote'} “${title || 'Untitled'}”` }
   },
 })
 

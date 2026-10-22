@@ -184,13 +184,20 @@ describe('dashboard tools', () => {
 
   it('reads and writes notebook pages', () => {
     const data = base()
+    // Old pages kept their title as a leading "# Heading"; it reads as the title.
     const notes = runTool('list_notes', {}, { data, now: NOW }).result.notes
-    expect(notes[0]).toMatchObject({ widgetId: 'w_nb', pageId: 'pg1', title: 'Groceries' })
+    expect(notes[0]).toMatchObject({ widgetId: 'w_nb', pageId: 'pg1', title: 'Groceries', icon: '📄' })
     apply(data, 'write_note', { mode: 'append', text: '- [ ] eggs' })
-    expect(runTool('read_note', { widgetId: 'w_nb', pageId: 'pg1' }, { data, now: NOW }).result.text).toBe('# Groceries\n- [ ] milk\n- [ ] eggs')
-    const r = apply(data, 'write_note', { mode: 'create', text: '# Trip plan\n\n- pack' })
+    let page = runTool('read_note', { widgetId: 'w_nb', pageId: 'pg1' }, { data, now: NOW }).result
+    expect(page).toMatchObject({ title: 'Groceries', text: '- [ ] milk\n- [ ] eggs' })
+    apply(data, 'write_note', { mode: 'append', text: 'Remember the coupons.' })
+    expect(data['widget:w_nb'].pages[0].text).toBe('- [ ] milk\n- [ ] eggs\n\nRemember the coupons.')
+    let r = apply(data, 'write_note', { mode: 'create', text: '# Trip plan\n\n- pack' })
     expect(r.summary).toBe('Created page “Trip plan”')
-    expect(data['widget:w_nb'].pages).toHaveLength(2)
+    expect(data['widget:w_nb'].pages[0]).toMatchObject({ title: 'Trip plan', text: '- pack', icon: '📄' })
+    r = apply(data, 'write_note', { mode: 'create', title: 'Ideas', icon: '💡', text: 'First idea' })
+    expect(data['widget:w_nb'].pages[0]).toMatchObject({ title: 'Ideas', icon: '💡', text: 'First idea' })
+    expect(data['widget:w_nb'].pages).toHaveLength(3)
     expect(runTool('write_note', { mode: 'append', text: 'x' }, { data, now: NOW }).error).toMatch(/pageId/)
   })
 
