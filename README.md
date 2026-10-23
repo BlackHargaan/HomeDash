@@ -73,7 +73,8 @@ fetching and homelab service checks. No accounts, no tracking.
   `/` for headings, to-do lists, quotes, code and dividers; select text for bold,
   italic, links and more; Markdown shortcuts (`#`, `-`, `[]`, `>`) convert as you
   type. Each page has a title and icon, and pages list in a sidebar (a switcher
-  when the widget is narrow). Copy or export any page as Markdown.
+  when the widget is narrow) — drag them to reorder, or use Alt+↑/↓ or the page
+  menu. Copy or export any page as Markdown.
 - **Quote of the day** — a new quote daily, favorites, or your own collection.
 - **GitHub activity** — recent public pushes, PRs, issues and stars for any user,
   with a 14-day activity strip.

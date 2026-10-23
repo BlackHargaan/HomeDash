@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { useWidgetState, uid } from '../lib/storage.js'
 import { timeAgo } from '../lib/date.js'
-import { DEFAULT_ICON, normalizePage, pageMarkdown, pageTitle } from '../../shared/notebook.js'
+import { DEFAULT_ICON, movePage, normalizePage, pageMarkdown, pageTitle } from '../../shared/notebook.js'
 
 // The rich-text editor (TipTap) is a separate chunk, loaded on first use.
 const NotebookEditor = lazy(() => import('./notebook/NotebookEditor.jsx'))
@@ -78,6 +78,29 @@ export default function NotebookWidget({ widget }) {
     ed.commands.setTextSelection(1)
   }
 
+  // Reordering: drag pages in the sidebar, Alt+↑/↓ on a focused page, or the ⋯ menu.
+  const dragging = useRef(null)
+  const [dropAt, setDropAt] = useState(null) // { id, after } — where the dragged page would land
+  const reorder = (id, beforeId) => setState((s) => ({ ...s, pages: movePage(s.pages, id, beforeId) }))
+
+  function shift(id, delta) {
+    const i = pages.findIndex((p) => p.id === id)
+    const j = i + delta
+    if (i < 0 || j < 0 || j >= pages.length) return
+    // Moving down means landing before the page two below (or at the end).
+    reorder(id, delta < 0 ? pages[j].id : pages[j + 1]?.id ?? null)
+  }
+
+  function dropOn(e, target) {
+    e.preventDefault()
+    const id = dragging.current
+    dragging.current = null
+    setDropAt(null)
+    if (!id || !target) return
+    const i = pages.findIndex((p) => p.id === target.id)
+    reorder(id, target.after ? pages[i + 1]?.id ?? null : target.id)
+  }
+
   const open = (id) => { setMenu(null); setState((s) => ({ ...s, current: id })) }
 
   function add() {
@@ -126,9 +149,37 @@ export default function NotebookWidget({ widget }) {
           <span>Pages</span>
           <button className="wtool" onClick={add} title="New page" aria-label="New page">＋</button>
         </div>
-        <div className="nb-side-list">
+        <div className="nb-side-list"
+          onDragOver={(e) => { if (dragging.current) e.preventDefault() }}
+          onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setDropAt(null) }}
+          onDrop={(e) => dropOn(e, dropAt || { id: pages[pages.length - 1].id, after: true })}>
           {pages.map((p) => (
-            <button key={p.id} className={`nb-side-item ${p.id === page.id ? 'on' : ''}`} onClick={() => open(p.id)} title={pageTitle(p)}>
+            <button key={p.id} title={pageTitle(p)} draggable
+              className={`nb-side-item ${p.id === page.id ? 'on' : ''} ${dropAt?.id === p.id ? (dropAt.after ? 'drop-after' : 'drop-before') : ''}`}
+              onClick={() => open(p.id)}
+              onKeyDown={(e) => {
+                if (!e.altKey || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown')) return
+                e.preventDefault()
+                const el = e.currentTarget
+                shift(p.id, e.key === 'ArrowUp' ? -1 : 1)
+                requestAnimationFrame(() => el.focus()) // keep focus on the moved page
+              }}
+              onDragStart={(e) => {
+                dragging.current = p.id
+                e.dataTransfer.effectAllowed = 'move'
+                // A private type only, so dropping on the editor doesn't paste the title.
+                e.dataTransfer.setData('application/x-homedash-page', p.id)
+              }}
+              onDragEnd={() => { dragging.current = null; setDropAt(null) }}
+              onDragOver={(e) => {
+                if (!dragging.current) return
+                e.preventDefault()
+                e.dataTransfer.dropEffect = 'move'
+                const r = e.currentTarget.getBoundingClientRect()
+                const after = e.clientY > r.top + r.height / 2
+                if (dropAt?.id !== p.id || dropAt.after !== after) setDropAt({ id: p.id, after })
+              }}
+              onDrop={(e) => dropOn(e, dropAt)}>
               <span className="nb-side-icon">{p.icon}</span>
               <span className={`nb-side-title ${p.title.trim() ? '' : 'faint'}`}>{pageTitle(p)}</span>
             </button>
@@ -148,6 +199,8 @@ export default function NotebookWidget({ widget }) {
             {menu === 'more' && (
               <Popover className="nb-menu" onClose={() => setMenu(null)}>
                 <button onClick={duplicate}>Duplicate</button>
+                <button onClick={() => { setMenu(null); shift(page.id, -1) }} disabled={pages[0].id === page.id}>Move up</button>
+                <button onClick={() => { setMenu(null); shift(page.id, 1) }} disabled={pages[pages.length - 1].id === page.id}>Move down</button>
                 <button onClick={copyMarkdown}>Copy as Markdown</button>
                 <button onClick={exportMarkdown}>Export .md</button>
                 <hr />

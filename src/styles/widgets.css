@@ -558,6 +558,10 @@ a.svc-name:hover { color: var(--accent); }
 .nb-side-item { display: flex; align-items: center; gap: 7px; padding: 5px 6px; border-radius: 7px; border: 0; background: none; color: var(--text-dim); font: inherit; font-size: 12.5px; text-align: left; cursor: pointer; }
 .nb-side-item:hover { background: var(--card-hover, rgba(255, 255, 255, 0.05)); color: var(--text); }
 .nb-side-item.on { background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--text); }
+.nb-side-item[draggable='true'] { cursor: grab; }
+.nb-side-item:active { cursor: grabbing; }
+.nb-side-item.drop-before { box-shadow: inset 0 2px 0 var(--accent); border-radius: 0 0 7px 7px; }
+.nb-side-item.drop-after { box-shadow: inset 0 -2px 0 var(--accent); border-radius: 7px 7px 0 0; }
 .nb-side-icon { flex: 0 0 auto; width: 18px; text-align: center; }
 .nb-side-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .nb-main { flex: 1; min-width: 0; display: flex; flex-direction: column; min-height: 0; }
@@ -577,6 +581,7 @@ a.svc-name:hover { color: var(--accent); }
 .nb-menu button { border: 0; background: none; color: var(--text); font: inherit; font-size: 12.5px; text-align: left; padding: 6px 9px; border-radius: 6px; cursor: pointer; }
 .nb-menu button:hover { background: var(--card-hover, rgba(255, 255, 255, 0.06)); }
 .nb-menu button.danger { color: var(--danger); }
+.nb-menu button:disabled { color: var(--text-faint); cursor: default; background: none; }
 .nb-menu hr { border: 0; border-top: 1px solid var(--line); margin: 3px 2px; }
 .nb-icons { left: 0; width: 232px; display: grid; grid-template-columns: repeat(6, 1fr); gap: 2px; }
 .nb-icons button { border: 0; background: none; font-size: 19px; line-height: 1; padding: 6px 0; border-radius: 6px; cursor: pointer; }
