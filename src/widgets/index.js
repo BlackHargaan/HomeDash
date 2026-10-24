@@ -23,6 +23,8 @@ import CalculatorWidget from './CalculatorWidget.jsx'
 import BookmarksWidget from './BookmarksWidget.jsx'
 import NotebookWidget from './NotebookWidget.jsx'
 import QuoteWidget from './QuoteWidget.jsx'
+import BoostWidget from './BoostWidget.jsx'
+import GamesWidget from './GamesWidget.jsx'
 import GitHubWidget from './GitHubWidget.jsx'
 import AssistantWidget from './AssistantWidget.jsx'
 
@@ -50,6 +52,8 @@ export const WIDGET_COMPONENTS = {
   bookmarks: BookmarksWidget,
   notebook: NotebookWidget,
   quote: QuoteWidget,
+  boost: BoostWidget,
+  games: GamesWidget,
   github: GitHubWidget,
   assistant: AssistantWidget,
 }

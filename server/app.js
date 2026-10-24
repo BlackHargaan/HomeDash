@@ -18,6 +18,7 @@
 //   POST /api/ai/chat                one assistant turn, streamed as Server-Sent Events
 //   GET  /api/ai/ollama/models       models available on the configured Ollama
 //   GET/POST /api/mcp/tokens, DELETE /api/mcp/tokens/:id   MCP access tokens
+//   GET/PUT /api/games/config, GET /api/games/steam/library, POST /api/games/ttb   Game Tracker (Steam, IGDB)
 //   POST /mcp                        MCP endpoint (bearer token, not the cookie)
 //
 // Only Node built-ins plus the Anthropic SDK (for the AI assistant), so the
@@ -31,6 +32,7 @@ import { extname, join, resolve, sep } from 'node:path'
 import { createPushService } from './push.js'
 import { createAi } from './ai.js'
 import { createMcp } from './mcp.js'
+import { createGames } from './games.js'
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -69,6 +71,7 @@ export async function startServer(opts = {}) {
   const push = await createPushService({ dataDir, subject: pushSubject, log, allowHttp: !!opts.allowInsecurePush })
   const ai = await createAi({ dataDir, log, anthropicOptions: opts.anthropicOptions })
   const mcp = await createMcp({ dataDir, store, version, log })
+  const games = await createGames({ dataDir, log, ...(opts.gamesOptions || {}) })
   // Deterministic per (server secret, password): changing the password signs
   // everyone out.
   const sessionToken = password ? hmac(secret, `session:${password}`) : null
@@ -207,6 +210,13 @@ export async function startServer(opts = {}) {
     }
     const revoke = path.match(/^\/api\/mcp\/tokens\/([a-f0-9]{6,32})$/)
     if (revoke && method === 'DELETE') return json(res, 200, await mcp.revokeToken(revoke[1]))
+
+    if (path === '/api/games/config') {
+      if (method === 'GET') return json(res, 200, games.publicConfig())
+      if (method === 'PUT') return json(res, 200, await games.updateConfig((await readJson(req)) || {}))
+    }
+    if (path === '/api/games/steam/library' && method === 'GET') return json(res, 200, await games.library())
+    if (path === '/api/games/ttb' && method === 'POST') return json(res, 200, await games.timeToBeat((await readJson(req)) || {}))
 
     return json(res, 404, { error: 'Not found' })
   }

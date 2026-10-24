@@ -152,6 +152,19 @@ export const WIDGET_TYPES = {
     description: 'A new quote every day — or your own collection.',
     layout: { w: 3, h: 3, minW: 2, minH: 2 },
   },
+  boost: {
+    name: 'Daily Boost',
+    icon: '🌱',
+    description: 'ADHD strategies, reminders of how ADHD works, and uplifting words — new every hour or day.',
+    layout: { w: 3, h: 5, minW: 2, minH: 3 },
+  },
+  games: {
+    name: 'Game Tracker',
+    icon: '🎮',
+    description: 'Finish your games: Steam playtime vs. time to beat, a playing-at-once limit, and what to play next.',
+    layout: { w: 4, h: 8, minW: 3, minH: 5 },
+    singleton: true,
+  },
   github: {
     name: 'GitHub Activity',
     icon: '🐙',
@@ -172,7 +185,7 @@ export const FLOW_HEIGHTS = {
   links: 210, habits: 250, pomodoro: 300, stats: 220, today: 340,
   countdown: 175, worldclock: 250, kanban: 340, embed: 320, iframeStat: 160,
   status: 260, docker: 300, rss: 360, search: 140, calculator: 280, bookmarks: 300,
-  notebook: 360, quote: 190, github: 360, assistant: 440,
+  notebook: 360, quote: 190, boost: 300, games: 460, github: 360, assistant: 440,
 }
 export function flowHeight(type) {
   return FLOW_HEIGHTS[type] || 240
@@ -195,6 +208,7 @@ export const EVENT_COLORS = ['indigo', 'violet', 'cyan', 'emerald', 'amber', 'ro
 // Sections of the "Add a widget" catalog, in display order.
 export const WIDGET_CATEGORIES = [
   ['Plan & do', ['assistant', 'today', 'calendar', 'tasks', 'kanban', 'habits', 'pomodoro', 'stats']],
+  ['Wellbeing & play', ['boost', 'games']],
   ['Write & save', ['notebook', 'notes', 'bookmarks', 'links']],
   ['Time & info', ['clock', 'worldclock', 'countdown', 'weather', 'quote']],
   ['Feeds & tools', ['search', 'calculator', 'rss', 'github']],

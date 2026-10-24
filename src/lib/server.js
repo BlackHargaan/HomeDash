@@ -51,6 +51,10 @@ export const serverApi = {
   pushUnsubscribe: (endpoint) => api('/api/push/unsubscribe', { method: 'POST', body: { endpoint } }),
   pushSchedule: (items) => api('/api/push/schedule', { method: 'PUT', body: { items } }),
   pushTest: (endpoint) => api('/api/push/test', { method: 'POST', body: { endpoint } }),
+  gamesConfig: () => api('/api/games/config'),
+  saveGamesConfig: (patch) => api('/api/games/config', { method: 'PUT', body: patch }),
+  steamLibrary: () => api('/api/games/steam/library'),
+  timeToBeat: (name, steamAppId) => api('/api/games/ttb', { method: 'POST', body: { name, steamAppId } }),
 }
 
 // fetch() that goes through the server's proxy when one is available, so feeds
