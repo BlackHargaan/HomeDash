@@ -201,6 +201,24 @@ describe('dashboard tools', () => {
     expect(runTool('write_note', { mode: 'append', text: 'x' }, { data, now: NOW }).error).toMatch(/pageId/)
   })
 
+  it('creates and lists notebook sub-pages', () => {
+    const data = base()
+    const trip = apply(data, 'write_note', { mode: 'create', title: 'Trips', text: '' }).result.created
+    data['widget:w_nb'].pages = data['widget:w_nb'].pages.map((p) => (p.id === trip.pageId ? { ...p, collapsed: true } : p))
+    const r = apply(data, 'write_note', { mode: 'create', title: 'Japan', text: 'Tokyo', parentId: trip.pageId })
+    expect(r.summary).toBe('Created page “Japan” in “Trips”')
+    const japan = data['widget:w_nb'].pages.find((p) => p.title === 'Japan')
+    expect(japan.parent).toBe(trip.pageId)
+    expect(data['widget:w_nb'].pages.find((p) => p.id === trip.pageId).collapsed).toBe(false)
+    const notes = runTool('list_notes', {}, { data, now: NOW }).result.notes
+    expect(notes.map((n) => n.title)).toEqual(['Trips', 'Japan', 'Groceries'])
+    expect(notes[1]).toMatchObject({ parentId: trip.pageId, path: 'Trips' })
+    expect(notes[0].parentId).toBeUndefined()
+    const read = runTool('read_note', { widgetId: 'w_nb', pageId: trip.pageId }, { data, now: NOW }).result
+    expect(read.subPages).toEqual([{ pageId: japan.id, title: 'Japan' }])
+    expect(runTool('write_note', { mode: 'create', text: 'x', parentId: 'nope' }, { data, now: NOW }).error).toMatch(/No page nope/)
+  })
+
   it('adds bookmarks and widgets', () => {
     const data = base()
     apply(data, 'add_bookmark', { url: 'docs.python.org', group: 'Dev' })

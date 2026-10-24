@@ -11,7 +11,7 @@ import { collectOccurrences, describeRecurrence } from './recurrence.js'
 import { toDateKey, fromDateKey } from './date.js'
 import { WIDGET_TYPES } from './registry.js'
 import { validate } from './schema.js'
-import { normalizePage, splitTitle, DEFAULT_ICON } from './notebook.js'
+import { normalizePage, splitTitle, DEFAULT_ICON, pageRows, parentOf, ancestorsOf, childrenOf } from './notebook.js'
 
 export const uid = (prefix = 'id') => `${prefix}_${Math.random().toString(36).slice(2, 9)}${Date.now().toString(36).slice(-4)}`
 
@@ -588,16 +588,20 @@ tool('delete_kanban_card', {
 
 tool('list_notes', {
   readOnly: true,
-  description: 'Notebook pages (titles, icons) and Notes widgets with short previews.',
+  description: 'Notebook pages (titles, icons, and where each sits: pages can have sub-pages) and Notes widgets with short previews.',
   input_schema: obj({}),
   run(ws) {
     const out = []
     for (const { board, widget } of allWidgets(ws)) {
       if (widget.type === 'notebook') {
-        const st = ws.get(`widget:${widget.id}`, null)
-        for (const raw of st?.pages || []) {
-          const p = normalizePage(raw)
-          out.push({ widgetId: widget.id, pageId: p.id, notebook: widgetTitle(widget), dashboard: board.name, title: p.title || 'Untitled', icon: p.icon, updated: p.updated ? fmtLocal(p.updated) : null, length: p.text.length })
+        const pages = (ws.get(`widget:${widget.id}`, null)?.pages || []).map(normalizePage)
+        for (const { page: p } of pageRows(pages, { all: true })) {
+          const path = ancestorsOf(pages, p.id).map((a) => a.title || 'Untitled')
+          out.push({
+            widgetId: widget.id, pageId: p.id, notebook: widgetTitle(widget), dashboard: board.name, title: p.title || 'Untitled', icon: p.icon,
+            ...(path.length ? { parentId: parentOf(pages, p), path: path.join(' / ') } : {}),
+            updated: p.updated ? fmtLocal(p.updated) : null, length: p.text.length,
+          })
         }
       } else if (widget.type === 'notes') {
         const text = ws.get(`widget:${widget.id}`, '')
@@ -624,10 +628,11 @@ tool('read_note', {
   run(ws, input) {
     const w = noteTarget(ws, input.widgetId)
     if (w.type === 'notes') return { text: String(ws.get(`widget:${w.id}`, '')) }
-    const pages = ws.get(`widget:${w.id}`, null)?.pages || []
-    const p = normalizePage(pages.find((x) => x.id === input.pageId) || (!input.pageId && pages[0]))
+    const pages = (ws.get(`widget:${w.id}`, null)?.pages || []).map(normalizePage)
+    const p = pages.find((x) => x.id === input.pageId) || (!input.pageId && pages[0])
     if (!p) fail(`No page ${input.pageId}. Use list_notes.`)
-    return { pageId: p.id, title: p.title || 'Untitled', icon: p.icon, text: p.text }
+    const subPages = childrenOf(pages, p.id).map((c) => ({ pageId: c.id, title: c.title || 'Untitled' }))
+    return { pageId: p.id, title: p.title || 'Untitled', icon: p.icon, parentId: parentOf(pages, p), ...(subPages.length ? { subPages } : {}), text: p.text }
   },
 })
 
@@ -640,6 +645,7 @@ tool('write_note', {
     icon: str('One emoji for the page (create).', { maxLength: 8 }),
     widgetId: str('Notebook or Notes widget id (default: the only Notebook).'),
     pageId: str('Page to append to or replace (Notebook).'),
+    parentId: str('Create the page as a sub-page of this page (Notebook, create).'),
   }, ['mode', 'text']),
   destructive: (input) => input.mode === 'replace',
   run(ws, input) {
@@ -658,6 +664,14 @@ tool('write_note', {
       // A leading "# Heading" becomes the title when none is given.
       const split = input.title ? { title: input.title, body: input.text } : splitTitle(input.text)
       const page = { id: uid('pg'), title: split.title.trim() || 'Untitled', icon: input.icon || DEFAULT_ICON, text: split.body, updated: now }
+      if (input.parentId) {
+        const parent = pages.find((p) => p.id === input.parentId)
+        if (!parent) fail(`No page ${input.parentId} to put the sub-page under. Use list_notes.`)
+        // Last under its parent, and make sure the parent is open in the sidebar.
+        page.parent = parent.id
+        ws.set(key, { ...st, pages: [...pages.map((p) => (p.id === parent.id && p.collapsed ? { ...p, collapsed: false } : p)), page], current: page.id })
+        return { created: { pageId: page.id, title: page.title, parentId: parent.id }, summary: `Created page “${page.title}” in “${parent.title || 'Untitled'}”` }
+      }
       ws.set(key, { ...st, pages: [page, ...pages], current: page.id })
       return { created: { pageId: page.id, title: page.title }, summary: `Created page “${page.title}”` }
     }
