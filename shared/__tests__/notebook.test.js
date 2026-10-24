@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { splitTitle, normalizePage, pageTitle, pageMarkdown } from '../notebook.js'
+import { splitTitle, normalizePage, pageTitle, pageMarkdown, movePage } from '../notebook.js'
 
 describe('notebook pages', () => {
   it('lifts a leading heading out as the title', () => {
@@ -15,5 +15,15 @@ describe('notebook pages', () => {
     expect(normalizePage(fresh)).toEqual(fresh) // a heading in the body stays in the body
     expect(pageTitle({ id: 'c', title: '  ', text: '' })).toBe('Untitled')
     expect(pageMarkdown(fresh)).toBe('# New\n\n# Not a title\nbody\n')
+  })
+
+  it('reorders pages', () => {
+    const ps = ['a', 'b', 'c', 'd'].map((id) => ({ id }))
+    const ids = (list) => list.map((p) => p.id).join('')
+    expect(ids(movePage(ps, 'd', 'a'))).toBe('dabc')
+    expect(ids(movePage(ps, 'a', 'c'))).toBe('bacd')
+    expect(ids(movePage(ps, 'b', null))).toBe('acdb')
+    expect(movePage(ps, 'b', 'b')).toBe(ps)
+    expect(movePage(ps, 'zz', 'a')).toBe(ps)
   })
 })
