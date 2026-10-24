@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { splitTitle, normalizePage, pageTitle, pageMarkdown, movePage } from '../notebook.js'
+import { splitTitle, normalizePage, pageTitle, pageMarkdown, movePage, pageRows, placePage, descendantIds, ancestorsOf } from '../notebook.js'
 
 describe('notebook pages', () => {
   it('lifts a leading heading out as the title', () => {
@@ -25,5 +25,37 @@ describe('notebook pages', () => {
     expect(ids(movePage(ps, 'b', null))).toBe('acdb')
     expect(movePage(ps, 'b', 'b')).toBe(ps)
     expect(movePage(ps, 'zz', 'a')).toBe(ps)
+  })
+
+  describe('sub-pages', () => {
+    // a ─ b ─ c
+    //   └ d
+    // e        (f points at a deleted parent → top level)
+    const tree = [
+      { id: 'a' }, { id: 'b', parent: 'a' }, { id: 'c', parent: 'b' }, { id: 'd', parent: 'a' },
+      { id: 'e' }, { id: 'f', parent: 'gone' },
+    ]
+    const rows = (ps, opts) => pageRows(ps, opts).map((r) => `${'-'.repeat(r.depth)}${r.page.id}${r.hasChildren ? '+' : ''}`).join(' ')
+
+    it('lists pages depth first', () => {
+      expect(rows(tree)).toBe('a+ -b+ --c -d e f')
+      const collapsed = tree.map((p) => (p.id === 'b' ? { ...p, collapsed: true } : p))
+      expect(rows(collapsed)).toBe('a+ -b+ -d e f')
+      expect(rows(collapsed, { all: true })).toBe('a+ -b+ --c -d e f')
+    })
+
+    it('finds ancestors and descendants', () => {
+      expect([...descendantIds(tree, 'a')].sort()).toEqual(['b', 'c', 'd'])
+      expect(ancestorsOf(tree, 'c').map((p) => p.id)).toEqual(['a', 'b'])
+      expect(ancestorsOf(tree, 'f')).toEqual([])
+    })
+
+    it('moves pages between parents, never into themselves', () => {
+      expect(rows(placePage(tree, 'e', 'b'))).toBe('a+ -b+ --c --e -d f')
+      expect(rows(placePage(tree, 'd', null, 'a'))).toBe('d a+ -b+ --c e f')
+      expect(rows(placePage(tree, 'c', 'a', 'b'))).toBe('a+ -c -b -d e f')
+      expect(placePage(tree, 'a', 'c')).toBe(tree)
+      expect(placePage(tree, 'a', 'a')).toBe(tree)
+    })
   })
 })
