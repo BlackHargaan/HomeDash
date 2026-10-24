@@ -79,6 +79,14 @@ fetching and homelab service checks. No accounts, no tracking.
   where you are, and a page lists its sub-pages at the bottom. Copy or export
   any page as Markdown.
 - **Quote of the day** — a new quote daily, favorites, or your own collection.
+- **Daily Boost** — a rotating reminder for ADHD brains: practical strategies,
+  short explanations of what ADHD is and how it affects daily life, and uplifting
+  words. Choose every 30 minutes, hourly, every 3 hours or daily; show a tip and
+  an uplifting phrase together or one at a time; favourite the ones that help,
+  skip the ones that don't, and optionally get a notification when a new one
+  arrives. The rotation shows everything once before repeating. Add your own,
+  import/export them as JSON, or ask the assistant to keep adding new ones
+  (`list_boosts`, `add_boosts`, `remove_boost` — also over MCP).
 - **GitHub activity** — recent public pushes, PRs, issues and stars for any user,
   with a 14-day activity strip.
 - **Today panel** — next event, top tasks and habits due, at a glance.

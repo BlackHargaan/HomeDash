@@ -201,6 +201,33 @@ describe('dashboard tools', () => {
     expect(runTool('write_note', { mode: 'append', text: 'x' }, { data, now: NOW }).error).toMatch(/pageId/)
   })
 
+  it('grows and trims the Daily Boost collection', () => {
+    const data = base()
+    let r = apply(data, 'add_boosts', { items: [
+      { kind: 'strategy', text: 'Put a sticky note on the door for tomorrow.', detail: 'Your future self will see it on the way out.' },
+      { kind: 'uplift', text: 'Done is better than perfect.' },
+    ] })
+    expect(r.summary).toBe('Added 1 boost (1 skipped)')
+    const id = r.result.added[0].id
+    expect(data.boosts.custom[0]).toMatchObject({ id, kind: 'strategy', source: 'assistant' })
+    expect(runTool('add_boosts', { items: [{ kind: 'uplift', text: 'Done is better than perfect.' }] }, { data, now: NOW }).error).toMatch(/Nothing new/)
+    expect(runTool('add_boosts', { items: [{ kind: 'joke', text: 'x' }] }, { data, now: NOW }).error).toMatch(/must be one of/)
+    let list = runTool('list_boosts', {}, { data, now: NOW }).result
+    expect(list.counts.strategy).toBeGreaterThan(30)
+    expect(list.custom).toHaveLength(1)
+    expect(list.builtIn).toBeUndefined()
+    expect(runTool('list_boosts', { includeBuiltIn: true }, { data, now: NOW }).result.builtIn.length).toBeGreaterThan(60)
+    expect(needsConfirmation('remove_boost', { id })).toBe(true)
+    r = apply(data, 'remove_boost', { id: 'u03' })
+    expect(r.summary).toBe('Removed boost “Done is better than perfect.” from the rotation')
+    expect(data.boosts.hidden).toEqual(['u03'])
+    r = apply(data, 'remove_boost', { id })
+    expect(r.summary).toMatch(/^Deleted boost/)
+    list = runTool('list_boosts', {}, { data, now: NOW }).result
+    expect(list.custom).toHaveLength(0)
+    expect(list.hidden).toEqual([{ id: 'u03', text: 'Done is better than perfect.' }])
+  })
+
   it('creates and lists notebook sub-pages', () => {
     const data = base()
     const trip = apply(data, 'write_note', { mode: 'create', title: 'Trips', text: '' }).result.created

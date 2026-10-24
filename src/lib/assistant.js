@@ -104,4 +104,5 @@ export { needsConfirmation, isReadOnlyTool }
 export const TOOL_LABELS = {
   get_overview: 'Looked at your dashboard', list_events: 'Checked your calendar', list_tasks: 'Checked your tasks',
   list_habits: 'Checked your habits', list_kanban: 'Checked your boards', list_notes: 'Looked through your notes', read_note: 'Read a note',
+  list_boosts: 'Looked at your Daily Boost',
 }

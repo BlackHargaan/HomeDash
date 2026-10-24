@@ -12,6 +12,7 @@ import { toDateKey, fromDateKey } from './date.js'
 import { WIDGET_TYPES } from './registry.js'
 import { validate } from './schema.js'
 import { normalizePage, splitTitle, DEFAULT_ICON, pageRows, parentOf, ancestorsOf, childrenOf } from './notebook.js'
+import { BOOST_KINDS, BUILT_IN_BOOSTS, normalizeBoosts, addBoosts } from './boosts.js'
 
 export const uid = (prefix = 'id') => `${prefix}_${Math.random().toString(36).slice(2, 9)}${Date.now().toString(36).slice(-4)}`
 
@@ -684,6 +685,67 @@ tool('write_note', {
   },
 })
 
+// ------------------------------------------------------------ daily boosts (ADHD strategies & uplifting words)
+
+const boostKind = { type: 'string', enum: Object.keys(BOOST_KINDS) }
+
+tool('list_boosts', {
+  readOnly: true,
+  description: 'The Daily Boost collection: ADHD strategies ("strategy"), reminders of what ADHD is and how it affects life ("insight"), and uplifting phrases ("uplift"). Returns counts, the user’s own and assistant-added entries, favourites and hidden ones. Pass includeBuiltIn to also see the built-in texts (useful before adding, to avoid repeats).',
+  input_schema: obj({ includeBuiltIn: { type: 'boolean' } }),
+  run(ws, input) {
+    const s = normalizeBoosts(ws.get('boosts', null))
+    const all = [...BUILT_IN_BOOSTS, ...s.custom]
+    const byId = new Map(all.map((b) => [b.id, b]))
+    const counts = Object.fromEntries(Object.keys(BOOST_KINDS).map((k) => [k, all.filter((b) => b.kind === k).length]))
+    const brief = (b) => ({ id: b.id, kind: b.kind, text: b.text, ...(b.detail ? { detail: b.detail } : {}) })
+    return {
+      counts,
+      custom: s.custom.map((b) => ({ ...brief(b), source: b.source })),
+      favorites: s.favorites.map((id) => byId.get(id)).filter(Boolean).map(brief),
+      hidden: s.hidden.map((id) => byId.get(id)).filter(Boolean).map((b) => ({ id: b.id, text: b.text })),
+      ...(input.includeBuiltIn ? { builtIn: BUILT_IN_BOOSTS.map(brief) } : {}),
+    }
+  },
+})
+
+tool('add_boosts', {
+  description: 'Add entries to the Daily Boost rotation. Each needs a kind — "strategy" (a practical ADHD tip; put the how/why in detail), "insight" (what ADHD is or how it affects daily life, accurate and non-shaming; explain in detail) or "uplift" (a short encouraging phrase, no detail) — and a short text (max 280 characters). Write original, kind, practical wording; no medical advice or diagnosis. Exact repeats are skipped.',
+  input_schema: obj({
+    items: {
+      type: 'array', maxItems: 50,
+      items: obj({ kind: boostKind, text: str('The headline, one sentence.', { maxLength: 280 }), detail: str('One or two sentences: how to do it, or why it matters.', { maxLength: 500 }) }, ['kind', 'text']),
+    },
+  }, ['items']),
+  run(ws, input) {
+    if (!input.items.length) fail('items is empty')
+    const r = addBoosts(ws.get('boosts', null), input.items, { source: 'assistant', makeId: () => uid('bst') })
+    if (!r.added.length) fail(`Nothing new to add — ${r.skipped === 1 ? 'that entry is' : 'those entries are'} already in the collection or invalid.`)
+    ws.set('boosts', r.store)
+    const n = r.added.length
+    return { added: r.added.map((b) => ({ id: b.id, kind: b.kind, text: b.text })), skipped: r.skipped, summary: `Added ${n} boost${n === 1 ? '' : 's'}${r.skipped ? ` (${r.skipped} skipped)` : ''}` }
+  },
+})
+
+tool('remove_boost', {
+  description: 'Take an entry out of the Daily Boost rotation: the user’s or assistant-added entries are deleted; built-in ones are hidden (they can be restored in the widget).',
+  input_schema: obj({ id: str('Entry id from list_boosts.') }, ['id']),
+  destructive: () => true,
+  run(ws, input) {
+    const s = normalizeBoosts(ws.get('boosts', null))
+    const own = s.custom.find((b) => b.id === input.id)
+    const builtIn = BUILT_IN_BOOSTS.find((b) => b.id === input.id)
+    if (!own && !builtIn) fail(`No boost ${input.id}. Use list_boosts.`)
+    const favorites = s.favorites.filter((id) => id !== input.id)
+    if (own) {
+      ws.set('boosts', { ...s, custom: s.custom.filter((b) => b.id !== input.id), favorites })
+      return { summary: `Deleted boost “${own.text}”` }
+    }
+    ws.set('boosts', { ...s, favorites, hidden: [...new Set([...s.hidden, input.id])] })
+    return { summary: `Removed boost “${builtIn.text}” from the rotation` }
+  },
+})
+
 // ------------------------------------------------------------ bookmarks & widgets
 
 tool('add_bookmark', {
@@ -790,7 +852,7 @@ export function runTool(name, input, { data, now = new Date(), readOnly = false 
   }
 }
 
-export const SYSTEM_PROMPT = `You are the assistant built into HomeDash, the user's personal dashboard (calendar, tasks, habits, kanban boards, notebook, bookmarks and widgets).
+export const SYSTEM_PROMPT = `You are the assistant built into HomeDash, the user's personal dashboard (calendar, tasks, habits, kanban boards, notebook, bookmarks, a Daily Boost of ADHD strategies and uplifting words, and widgets).
 
 You can read and change their dashboard with the tools. Look things up rather than guessing ids: list_events, list_tasks, list_habits, list_kanban, list_notes, or get_overview for boards, widgets and calendars. When asked to do something, do it with the tools and then confirm briefly what changed. If a request is ambiguous in a way that matters (which of two events, which day), ask one short question instead of acting.
 
