@@ -201,6 +201,33 @@ describe('dashboard tools', () => {
     expect(runTool('write_note', { mode: 'append', text: 'x' }, { data, now: NOW }).error).toMatch(/pageId/)
   })
 
+  it('tracks games', () => {
+    const data = base()
+    data.games = { items: [
+      { id: 'g1', name: 'Hades', status: 'playing', steamAppId: 1145360, steamMin: 600, ttb: { main: 22 }, added: '2026-09-01T10:00:00Z', lastPlayed: '2026-09-01T10:00:00Z' },
+      { id: 'g2', name: 'Celeste', status: 'playing', added: '2026-09-01T10:00:00Z', lastPlayed: new Date(NOW).toISOString() },
+    ], settings: { playingLimit: 2 } }
+    let r = apply(data, 'add_game', { name: 'Hollow Knight', status: 'playing', mainHours: 27, fullHours: 63 })
+    expect(r.summary).toBe('Added “Hollow Knight” to Playing')
+    expect(r.result.note).toMatch(/3 games in progress — more than their limit of 2/)
+    expect(data.games.items[0]).toMatchObject({ name: 'Hollow Knight', ttb: { main: 27, full: 63 }, ttbSource: 'assistant', status: 'playing' })
+    expect(runTool('add_game', { name: 'hades' }, { data, now: NOW }).error).toMatch(/already in the tracker/)
+    r = apply(data, 'update_game', { id: 'Celeste', mainHours: 8, addMinutes: 90, status: 'paused' })
+    expect(r.summary).toBe('Updated “Celeste”: time to beat 8 h, logged 90 min, moved to Paused')
+    const list = runTool('list_games', {}, { data, now: NOW }).result
+    expect(list.counts).toMatchObject({ playing: 2, paused: 1 })
+    expect(list.games.find((g) => g.name === 'Hades')).toMatchObject({ playedHours: 10, percent: 45, hoursLeft: 12, steam: true })
+    expect(list.suggestions[0]).toMatchObject({ name: 'Celeste', why: 'Already started — about 6.5 h left' })
+    expect(list.quiet.map((g) => g.name)).toEqual(['Hades'])
+    expect(runTool('list_games', { status: 'paused' }, { data, now: NOW }).result.games).toHaveLength(1)
+    r = apply(data, 'update_game', { id: 'g1', status: 'finished' })
+    expect(runTool('list_games', {}, { data, now: NOW }).result.finishedThisYear).toBe(1)
+    expect(needsConfirmation('remove_game', { id: 'g1' })).toBe(true)
+    apply(data, 'remove_game', { id: 'g1' })
+    expect(data.games.items.map((g) => g.name)).toEqual(['Hollow Knight', 'Celeste'])
+    expect(runTool('update_game', { id: 'nope', status: 'paused' }, { data, now: NOW }).error).toMatch(/No game nope/)
+  })
+
   it('grows and trims the Daily Boost collection', () => {
     const data = base()
     let r = apply(data, 'add_boosts', { items: [

@@ -79,6 +79,16 @@ fetching and homelab service checks. No accounts, no tracking.
   where you are, and a page lists its sub-pages at the bottom. Copy or export
   any page as Markdown.
 - **Quote of the day** — a new quote daily, favorites, or your own collection.
+- **Game Tracker** — built for actually finishing games. Pulls your Steam library
+  and playtime (free Steam Web API key, kept on the server), and shows each game's
+  progress against its time to beat — main story, main + extras or completionist,
+  looked up from IGDB if you add a Twitch developer app, typed in, or filled in by
+  the assistant. See “≈ 6 h left · 6 sessions · ~3 weeks at your pace”, keep a
+  small *playing at once* limit, get “what to play next” picks (closest to done
+  and short games first), a gentle “still playing?” nudge for games that went
+  quiet, guilt-free *Let go*, and a little celebration when you finish one.
+  Non-Steam games work too — log time with +30m / +1h. Steam sync needs the
+  server or desktop app.
 - **Daily Boost** — a rotating reminder for ADHD brains: practical strategies,
   short explanations of what ADHD is and how it affects daily life, and uplifting
   words. Choose every 30 minutes, hourly, every 3 hours or daily; show a tip and
