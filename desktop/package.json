@@ -1,7 +1,7 @@
 {
   "name": "homedash-desktop",
   "productName": "HomeDash",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "private": true,
   "description": "HomeDash desktop app — your dashboard in its own window, with the HomeDash server built in.",
   "author": "HomeDash",
