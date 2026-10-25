@@ -79,6 +79,18 @@ fetching and homelab service checks. No accounts, no tracking.
   where you are, and a page lists its sub-pages at the bottom. Copy or export
   any page as Markdown.
 - **Quote of the day** — a new quote daily, favorites, or your own collection.
+- **Workouts** — plans by body region (chest, back, shoulders, arms, legs & glutes,
+  core, push, pull, upper or full body) built only from moves your equipment
+  allows — tell it what you have (bench, barbell and total plate weight, rack or
+  no rack, dumbbell weights, kettlebells, pull-up bar, bands) and where you train.
+  No rack? Barbell work starts from the floor (floor press, Zercher/front squats,
+  rows, deadlifts, hip thrusts). Pick a length and goal, shuffle for variety, then
+  start a guided session — tap off sets, a rest timer starts itself, weights carry
+  over and step up when you finish every set — or put it on the calendar once or
+  weekly (e.g. every Mon & Thu at 6 pm); today's workout shows up with a Start
+  button. The assistant can design more plans for your setup, schedule and log
+  them (`get_workout_setup`, `save_workout_plan`, `generate_workout_plan`,
+  `schedule_workout`, `log_workout`, …).
 - **Game Tracker** — built for actually finishing games. Pulls your Steam library
   and playtime (free Steam Web API key, kept on the server), and shows each game's
   progress against its time to beat — main story, main + extras or completionist,

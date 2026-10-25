@@ -165,6 +165,13 @@ export const WIDGET_TYPES = {
     layout: { w: 4, h: 8, minW: 3, minH: 5 },
     singleton: true,
   },
+  workouts: {
+    name: 'Workouts',
+    icon: '💪',
+    description: 'Workout plans by body region for the equipment you have — with a set tracker, rest timer, log and calendar.',
+    layout: { w: 4, h: 9, minW: 3, minH: 5 },
+    singleton: true,
+  },
   github: {
     name: 'GitHub Activity',
     icon: '🐙',
@@ -185,7 +192,7 @@ export const FLOW_HEIGHTS = {
   links: 210, habits: 250, pomodoro: 300, stats: 220, today: 340,
   countdown: 175, worldclock: 250, kanban: 340, embed: 320, iframeStat: 160,
   status: 260, docker: 300, rss: 360, search: 140, calculator: 280, bookmarks: 300,
-  notebook: 360, quote: 190, boost: 300, games: 460, github: 360, assistant: 440,
+  notebook: 360, quote: 190, boost: 300, games: 460, workouts: 520, github: 360, assistant: 440,
 }
 export function flowHeight(type) {
   return FLOW_HEIGHTS[type] || 240
@@ -208,7 +215,7 @@ export const EVENT_COLORS = ['indigo', 'violet', 'cyan', 'emerald', 'amber', 'ro
 // Sections of the "Add a widget" catalog, in display order.
 export const WIDGET_CATEGORIES = [
   ['Plan & do', ['assistant', 'today', 'calendar', 'tasks', 'kanban', 'habits', 'pomodoro', 'stats']],
-  ['Wellbeing & play', ['boost', 'games']],
+  ['Wellbeing & play', ['workouts', 'boost', 'games']],
   ['Write & save', ['notebook', 'notes', 'bookmarks', 'links']],
   ['Time & info', ['clock', 'worldclock', 'countdown', 'weather', 'quote']],
   ['Feeds & tools', ['search', 'calculator', 'rss', 'github']],
