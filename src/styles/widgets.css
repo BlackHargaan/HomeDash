@@ -939,3 +939,11 @@ button.nb-side-caret:hover { color: var(--text); background: var(--card-hover, r
   .gt-cover { width: 56px; height: 26px; }
   .gt-tab { padding: 4px 6px; }
 }
+.gt-guide { font-size: 12px; line-height: 1.5; border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; background: var(--input); }
+.gt-guide summary { cursor: pointer; color: var(--accent); font-weight: 600; padding: 2px 0; }
+.gt-guide[open] summary { margin-bottom: 4px; }
+.gt-guide ol { margin: 4px 0 8px; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; }
+.gt-guide ul { margin: 4px 0; padding-left: 16px; }
+.gt-guide a { color: var(--accent); }
+.gt-guide code { background: var(--card-hover, rgba(255, 255, 255, 0.06)); padding: 0 4px; border-radius: 4px; font-size: 11.5px; }
+.gt-guide .gt-hint + .gt-hint { margin-top: 6px; }
