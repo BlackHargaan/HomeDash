@@ -16,6 +16,9 @@ import { BOOST_KINDS, BUILT_IN_BOOSTS, normalizeBoosts, addBoosts } from './boos
 import {
   GAME_STATUSES, TTB_GOALS, normalizeGames, normName, playedMinutes, progress, eta, logPlay, setStatus, suggestNext, staleGames, finishedThisYear, fmtHours,
 } from './games.js'
+import {
+  EQUIPMENT, GOALS, REGIONS, EXERCISES, normalizeWorkouts, available, generatePlan, workoutEvent, weekStats, DEFAULT_SETUP,
+} from './workouts.js'
 
 export const uid = (prefix = 'id') => `${prefix}_${Math.random().toString(36).slice(2, 9)}${Date.now().toString(36).slice(-4)}`
 
@@ -870,6 +873,194 @@ tool('remove_game', {
   },
 })
 
+// ------------------------------------------------------------ workouts
+
+const regionField = { type: 'string', enum: Object.keys(REGIONS), description: Object.entries(REGIONS).map(([k, r]) => `${k} = ${r.label}`).join(', ') }
+const goalField = { type: 'string', enum: Object.keys(GOALS) }
+const DAY_CODES = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU']
+const planBrief = (p) => ({ id: p.id, name: p.name, region: p.region, minutes: p.minutes, source: p.source, exercises: p.exercises.map((x) => `${x.name} ${x.sets}×${x.reps}${x.weight ? ` @ ${x.weight}` : ''}`) })
+
+function workoutState(ws) {
+  const st = normalizeWorkouts(ws.get('workouts', null))
+  return st
+}
+
+tool('get_workout_setup', {
+  readOnly: true,
+  description: 'The Workouts widget: the user’s equipment and where they train, their goal and usual length, saved plans, recent sessions, this week’s count and upcoming scheduled workouts. Also lists the exercises their equipment allows. Call this before designing a workout and only use moves their equipment supports (e.g. without a rack: no barbell back squat or barbell bench press — use floor press, front/Zercher squats, hip thrusts, dumbbells).',
+  input_schema: obj({}),
+  run(ws, _input, ctx) {
+    const st = workoutState(ws)
+    const s = st.setup
+    const upcoming = collectOccurrences(ws.get('events', []).filter((e) => e.workout?.planId), ctx.now, new Date(ctx.now.getTime() + 14 * 86400000))
+      .slice(0, 10).map((e) => ({ title: e.title, start: fmtLocal(e.start), planId: e.workout.planId }))
+    return {
+      setup: s ? {
+        equipment: Object.keys(EQUIPMENT).filter((k) => s.have[k]).map((k) => EQUIPMENT[k]),
+        noRack: !!s.have.barbell && !s.have.rack,
+        barbellMax: s.barbellMax ? `${s.barbellMax} ${s.unit}` : null,
+        dumbbells: s.dumbbellWeights?.length ? s.dumbbellWeights.map((w) => `${w} ${s.unit}`) : null,
+        kettlebells: s.kettlebellWeights?.length ? s.kettlebellWeights.map((w) => `${w} ${s.unit}`) : null,
+        where: s.where || null, goal: GOALS[s.goal]?.label, usualMinutes: s.minutes,
+      } : null,
+      ...(s ? {} : { note: 'No equipment set up yet — ask what they have, then call set_workout_setup.' }),
+      exercisesAvailable: available(s || DEFAULT_SETUP).map((e) => `${e.name} (${e.muscles.join(', ')})`),
+      plans: st.plans.map(planBrief),
+      recent: st.log.slice(-8).reverse().map((l) => ({ date: fmtLocal(l.date), plan: l.planName, minutes: l.minutes, exercises: (l.exercises || []).map((x) => `${x.name}${x.weight ? ` @ ${x.weight}` : ''} ${x.done ?? x.sets}/${x.sets} sets`) })),
+      thisWeek: weekStats(st.log, ctx.now),
+      upcoming,
+      regions: Object.fromEntries(Object.entries(REGIONS).map(([k, r]) => [k, r.label])),
+    }
+  },
+})
+
+tool('set_workout_setup', {
+  description: 'Save what the user trains with: equipment, total barbell weight (bar + plates), dumbbell and kettlebell weights, unit, where they train, goal and usual workout length.',
+  input_schema: obj({
+    equipment: { type: 'array', items: { type: 'string', enum: Object.keys(EQUIPMENT) }, maxItems: 10, description: 'Everything they have (bodyweight is always assumed).' },
+    barbellMax: { type: 'number', minimum: 0, maximum: 2000, description: 'Bar plus all plates.' },
+    dumbbellWeights: { type: 'array', items: { type: 'number', minimum: 1, maximum: 300 }, maxItems: 30 },
+    kettlebellWeights: { type: 'array', items: { type: 'number', minimum: 1, maximum: 300 }, maxItems: 20 },
+    unit: { type: 'string', enum: ['lb', 'kg'] },
+    where: str('Where they train, e.g. “shed”.', { maxLength: 80 }),
+    goal: goalField,
+    minutes: { type: 'integer', minimum: 10, maximum: 120 },
+  }),
+  run(ws, input) {
+    const st = workoutState(ws)
+    const setup = { ...DEFAULT_SETUP, ...(st.setup || {}) }
+    if (input.equipment) setup.have = Object.fromEntries(input.equipment.map((k) => [k, true]))
+    for (const k of ['barbellMax', 'dumbbellWeights', 'kettlebellWeights', 'unit', 'where', 'goal', 'minutes']) if (input[k] !== undefined) setup[k] = input[k]
+    ws.set('workouts', { ...st, setup })
+    return { summary: 'Updated your workout setup' }
+  },
+})
+
+function cleanPlanExercises(list, setup) {
+  return list.map((x) => {
+    const known = EXERCISES.find((e) => e.name.toLowerCase() === x.name.trim().toLowerCase())
+    if (known && setup) {
+      const missing = known.needs.filter((n) => !setup.have[n])
+      if (missing.length) fail(`${known.name} needs ${missing.map((m) => EQUIPMENT[m].toLowerCase()).join(' and ')}, which they don’t have. Pick another exercise (see exercisesAvailable in get_workout_setup).`)
+    }
+    return {
+      name: known?.name || x.name.trim(), sets: x.sets, reps: String(x.reps), ...(x.rest ? { rest: x.rest } : {}),
+      ...(x.weight ? { weight: x.weight } : {}), ...(x.note || known?.cue ? { note: x.note || known.cue } : {}), ...(known ? { exerciseId: known.id } : {}),
+    }
+  })
+}
+
+tool('save_workout_plan', {
+  description: 'Save a workout plan you designed to the Workouts widget. Fit it to their equipment (get_workout_setup); put big lifts first, include a warm-up, and use note for one short form cue. Weights can be numbers with a unit (“30 lb”) or guidance (“leave 2 reps in the tank”).',
+  input_schema: obj({
+    name: str('Short name, e.g. “Shed push day”.', { maxLength: 80 }),
+    region: regionField,
+    goal: goalField,
+    minutes: { type: 'integer', minimum: 10, maximum: 150 },
+    warmup: str('Warm-up instructions.', { maxLength: 400 }),
+    exercises: {
+      type: 'array', maxItems: 12,
+      items: obj({
+        name: str('Exercise name.', { maxLength: 80 }),
+        sets: { type: 'integer', minimum: 1, maximum: 10 },
+        reps: str('Reps or time, e.g. "8–10" or "30 s".', { maxLength: 30 }),
+        rest: str('Rest between sets, e.g. "90 s".', { maxLength: 20 }),
+        weight: str('Load or guidance.', { maxLength: 60 }),
+        note: str('One short form cue.', { maxLength: 200 }),
+      }, ['name', 'sets', 'reps']),
+    },
+    tips: { type: 'array', items: { type: 'string', maxLength: 300 }, maxItems: 5 },
+    replaceId: str('Replace this saved plan instead of adding a new one.'),
+  }, ['name', 'region', 'exercises']),
+  destructive: (input) => !!input.replaceId,
+  run(ws, input, ctx) {
+    const st = workoutState(ws)
+    if (!input.exercises.length) fail('exercises is empty')
+    const plan = {
+      id: input.replaceId || uid('plan'), name: input.name.trim(), region: input.region, goal: input.goal || st.setup?.goal || 'muscle',
+      minutes: input.minutes || st.setup?.minutes || 45, source: 'assistant',
+      warmup: input.warmup || '5 minutes of easy movement, then 1–2 light sets of the first exercise.',
+      exercises: cleanPlanExercises(input.exercises, st.setup), tips: input.tips || [], created: ctx.now.toISOString(),
+    }
+    if (input.replaceId && !st.plans.some((p) => p.id === input.replaceId)) fail(`No plan ${input.replaceId}.`)
+    const plans = input.replaceId ? st.plans.map((p) => (p.id === plan.id ? plan : p)) : [plan, ...st.plans]
+    ws.set('workouts', { ...st, plans })
+    return { plan: planBrief(plan), summary: `${input.replaceId ? 'Updated' : 'Saved'} workout “${plan.name}”` }
+  },
+})
+
+tool('generate_workout_plan', {
+  description: 'Quickly build a plan from the built-in exercise library for a body region, fitted to their equipment, and save it. Good for a fast standard plan; use save_workout_plan when you want to design one yourself.',
+  input_schema: obj({ region: regionField, minutes: { type: 'integer', minimum: 15, maximum: 90 }, goal: goalField, name: str('Optional name.', { maxLength: 80 }) }, ['region']),
+  run(ws, input, ctx) {
+    const st = workoutState(ws)
+    const p = generatePlan({ region: input.region, minutes: input.minutes, goal: input.goal, setup: st.setup || DEFAULT_SETUP, seed: ctx.now.getTime(), name: input.name })
+    const plan = { ...p, id: uid('plan'), source: 'generated', created: ctx.now.toISOString() }
+    ws.set('workouts', { ...st, plans: [plan, ...st.plans] })
+    return { plan: { ...planBrief(plan), tips: plan.tips }, summary: `Saved workout “${plan.name}”` }
+  },
+})
+
+tool('schedule_workout', {
+  description: 'Put a saved workout plan on the calendar, once or every week on chosen days.',
+  input_schema: obj({
+    planId: str('Plan id from get_workout_setup.'),
+    start: str(`First session. ${WHEN}`),
+    days: { type: 'array', items: { type: 'string', enum: DAY_CODES }, maxItems: 7, description: 'Repeat weekly on these days, e.g. ["MO","TH"]. Omit for a one-off.' },
+    calendar: str('Calendar name (default: the first editable one).'),
+  }, ['planId', 'start']),
+  run(ws, input) {
+    const st = workoutState(ws)
+    const plan = st.plans.find((p) => p.id === input.planId)
+    if (!plan) fail(`No plan ${input.planId}. Use get_workout_setup.`)
+    const when = parseWhen(input.start, 'start')
+    if (when.dateOnly) fail('Give a time too, e.g. "2026-10-27T18:00".')
+    const cal = resolveCalendar(ws, input.calendar)
+    const ev = workoutEvent(plan, { start: when.date, byday: input.days, calendarId: cal.id, location: st.setup?.where, makeId: uid })
+    ws.set('events', [...ws.get('events', []), ev])
+    return { created: eventOut(ws, ev), summary: `Added “${plan.name}” on ${fmtDay(when.date)} at ${fmtLocal(when.date).slice(11)}${ev.recurrence ? ` (${describeRecurrence(ev.recurrence)})` : ''}` }
+  },
+})
+
+tool('log_workout', {
+  description: 'Record a finished workout (the widget logs sessions itself when the user taps Finish; use this when they tell you about one).',
+  input_schema: obj({
+    planId: str('Plan it followed, if any.'),
+    name: str('What they did, if not a saved plan.', { maxLength: 80 }),
+    date: str(`When. ${WHEN} Default: now.`),
+    minutes: { type: 'integer', minimum: 1, maximum: 300 },
+    exercises: { type: 'array', maxItems: 20, items: obj({ name: str('Exercise.', { maxLength: 80 }), sets: { type: 'integer', minimum: 1, maximum: 20 }, reps: str('Reps.', { maxLength: 30 }), weight: str('Load.', { maxLength: 40 }) }, ['name', 'sets']) },
+    note: str('How it went.', { maxLength: 300 }),
+  }),
+  run(ws, input, ctx) {
+    const st = workoutState(ws)
+    const plan = input.planId ? st.plans.find((p) => p.id === input.planId) : null
+    if (input.planId && !plan) fail(`No plan ${input.planId}.`)
+    const date = input.date ? parseWhen(input.date, 'date').date : ctx.now
+    const entry = {
+      id: uid('wk'), date: date.toISOString(), planId: plan?.id || null, planName: plan?.name || input.name || 'Workout', region: plan?.region || null,
+      minutes: input.minutes || plan?.minutes || null,
+      exercises: (input.exercises || plan?.exercises || []).map((x) => ({ name: x.name, sets: x.sets, done: x.sets, reps: x.reps, ...(x.weight ? { weight: x.weight } : {}) })),
+      ...(input.note ? { note: input.note } : {}),
+    }
+    ws.set('workouts', { ...st, log: [...st.log, entry].slice(-500) })
+    return { summary: `Logged “${entry.planName}” on ${fmtDay(date)}` }
+  },
+})
+
+tool('delete_workout_plan', {
+  description: 'Delete a saved workout plan (calendar sessions already scheduled stay on the calendar).',
+  input_schema: obj({ planId: str('Plan id.') }, ['planId']),
+  destructive: () => true,
+  run(ws, input) {
+    const st = workoutState(ws)
+    const plan = st.plans.find((p) => p.id === input.planId)
+    if (!plan) fail(`No plan ${input.planId}.`)
+    ws.set('workouts', { ...st, plans: st.plans.filter((p) => p.id !== plan.id) })
+    return { summary: `Deleted workout “${plan.name}”` }
+  },
+})
+
 // ------------------------------------------------------------ bookmarks & widgets
 
 tool('add_bookmark', {
@@ -976,7 +1167,7 @@ export function runTool(name, input, { data, now = new Date(), readOnly = false 
   }
 }
 
-export const SYSTEM_PROMPT = `You are the assistant built into HomeDash, the user's personal dashboard (calendar, tasks, habits, kanban boards, notebook, bookmarks, a Daily Boost of ADHD strategies and uplifting words, a Game Tracker for finishing games, and widgets).
+export const SYSTEM_PROMPT = `You are the assistant built into HomeDash, the user's personal dashboard (calendar, tasks, habits, kanban boards, notebook, bookmarks, a Daily Boost of ADHD strategies and uplifting words, a Game Tracker for finishing games, Workouts (plans that fit their equipment, scheduled on the calendar), and widgets).
 
 You can read and change their dashboard with the tools. Look things up rather than guessing ids: list_events, list_tasks, list_habits, list_kanban, list_notes, or get_overview for boards, widgets and calendars. When asked to do something, do it with the tools and then confirm briefly what changed. If a request is ambiguous in a way that matters (which of two events, which day), ask one short question instead of acting.
 

@@ -201,6 +201,52 @@ describe('dashboard tools', () => {
     expect(runTool('write_note', { mode: 'append', text: 'x' }, { data, now: NOW }).error).toMatch(/pageId/)
   })
 
+  it('plans, schedules and logs workouts for the equipment on hand', () => {
+    const data = base()
+    let setup = runTool('get_workout_setup', {}, { data, now: NOW }).result
+    expect(setup.setup).toBe(null)
+    expect(setup.note).toMatch(/No equipment/)
+    apply(data, 'set_workout_setup', { equipment: ['bench', 'barbell', 'dumbbells'], barbellMax: 300, dumbbellWeights: [15, 30], where: 'Shed', goal: 'muscle', minutes: 45 })
+    setup = runTool('get_workout_setup', {}, { data, now: NOW }).result
+    expect(setup.setup).toMatchObject({ equipment: ['Bench', 'Barbell', 'Dumbbells'], noRack: true, barbellMax: '300 lb', dumbbells: ['15 lb', '30 lb'], where: 'Shed' })
+    expect(setup.exercisesAvailable.join()).not.toMatch(/Barbell bench press|back squat/)
+
+    // A rack-only lift is refused; a fitted plan is saved
+    const bad = runTool('save_workout_plan', { name: 'Chest', region: 'chest', exercises: [{ name: 'barbell bench press', sets: 4, reps: '8' }] }, { data, now: NOW })
+    expect(bad.error).toMatch(/needs squat \/ power rack/)
+    let r = apply(data, 'save_workout_plan', { name: 'Shed push day', region: 'push', minutes: 40, exercises: [
+      { name: 'Barbell floor press', sets: 4, reps: '6–8', weight: '135 lb' },
+      { name: 'Landmine press', sets: 3, reps: '10' },
+      { name: 'Lateral raise', sets: 3, reps: '12–15', weight: '15 lb', note: 'Slow on the way down.' },
+    ] })
+    expect(r.summary).toBe('Saved workout “Shed push day”')
+    const plan = data.workouts.plans[0]
+    expect(plan).toMatchObject({ source: 'assistant', region: 'push', minutes: 40 })
+    expect(plan.exercises[1].note).toMatch(/corner/) // library cue filled in
+    expect(needsConfirmation('save_workout_plan', { replaceId: plan.id })).toBe(true)
+
+    r = apply(data, 'generate_workout_plan', { region: 'legs', minutes: 30 })
+    expect(r.result.plan.exercises).toHaveLength(4)
+    expect(data.workouts.plans).toHaveLength(2)
+
+    r = apply(data, 'schedule_workout', { planId: plan.id, start: '2026-10-22T18:00', days: ['TH', 'MO'] })
+    expect(r.summary).toMatch(/^Added “Shed push day” on Thu/)
+    const ev = data.events.at(-1)
+    expect(ev).toMatchObject({ title: '💪 Shed push day', workout: { planId: plan.id }, location: 'Shed', recurrence: { freq: 'WEEKLY', byday: ['TH', 'MO'] } })
+    expect(runTool('schedule_workout', { planId: plan.id, start: '2026-10-22' }, { data, now: NOW }).error).toMatch(/time too/)
+    setup = runTool('get_workout_setup', {}, { data, now: NOW }).result
+    expect(setup.upcoming.slice(0, 2).map((u) => u.start)).toEqual(['2026-10-22T18:00', '2026-10-26T18:00'])
+
+    apply(data, 'log_workout', { planId: plan.id, minutes: 38, note: 'Felt strong' })
+    setup = runTool('get_workout_setup', {}, { data, now: NOW }).result
+    expect(setup.recent[0]).toMatchObject({ plan: 'Shed push day', minutes: 38 })
+    expect(setup.thisWeek.workouts).toBe(1)
+
+    expect(needsConfirmation('delete_workout_plan', { planId: plan.id })).toBe(true)
+    apply(data, 'delete_workout_plan', { planId: plan.id })
+    expect(data.workouts.plans).toHaveLength(1)
+  })
+
   it('tracks games', () => {
     const data = base()
     data.games = { items: [

@@ -25,6 +25,7 @@ import NotebookWidget from './NotebookWidget.jsx'
 import QuoteWidget from './QuoteWidget.jsx'
 import BoostWidget from './BoostWidget.jsx'
 import GamesWidget from './GamesWidget.jsx'
+import WorkoutsWidget from './WorkoutsWidget.jsx'
 import GitHubWidget from './GitHubWidget.jsx'
 import AssistantWidget from './AssistantWidget.jsx'
 
@@ -54,6 +55,7 @@ export const WIDGET_COMPONENTS = {
   quote: QuoteWidget,
   boost: BoostWidget,
   games: GamesWidget,
+  workouts: WorkoutsWidget,
   github: GitHubWidget,
   assistant: AssistantWidget,
 }

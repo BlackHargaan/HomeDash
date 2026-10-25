@@ -503,6 +503,41 @@ function SettingsPanel({ server, settings, lib, onSettings, onConfig, onSync, sy
               Looks up main story, extras and completionist times from IGDB. Create a free app at
               {' '}<a href="https://dev.twitch.tv/console/apps" target="_blank" rel="noopener noreferrer">dev.twitch.tv/console</a> and paste its client ID and secret. Or skip this and ask the assistant to fill in times.
             </p>
+            <details className="gt-guide">
+              <summary>How do I set this up? (about 5 minutes, free)</summary>
+              <ol>
+                <li>
+                  <b>Turn on two-factor authentication on Twitch.</b> Twitch requires it before you can register an app:
+                  {' '}<a href="https://www.twitch.tv/settings/security" target="_blank" rel="noopener noreferrer">Settings → Security and Privacy</a>.
+                  No account? Sign up free at twitch.tv.
+                </li>
+                <li>
+                  Open <a href="https://dev.twitch.tv/console/apps" target="_blank" rel="noopener noreferrer">dev.twitch.tv/console</a>, log in with Twitch, and click <b>Register Your Application</b>.
+                </li>
+                <li>
+                  Fill in the form:
+                  <ul>
+                    <li><b>Name:</b> anything unique, e.g. <code>HomeDash-yourname</code> (it can’t contain “Twitch”)</li>
+                    <li><b>OAuth Redirect URLs:</b> <code>http://localhost</code> (required, but not used)</li>
+                    <li><b>Category:</b> Application Integration</li>
+                    <li><b>Client Type:</b> <b>Confidential</b> — a Public app has no secret</li>
+                  </ul>
+                  Then click <b>Create</b>.
+                </li>
+                <li>
+                  Click <b>Manage</b> next to your app. Copy the <b>Client ID</b>, then click <b>New Secret</b> and copy it straight away — Twitch only shows it once.
+                </li>
+                <li>Paste both below and click <b>Save</b>. HomeDash checks them with Twitch right away.</li>
+              </ol>
+              <p className="gt-hint faint">
+                New games then fill in their time to beat automatically; for games already here use <b>⋯ → Time to beat… → Look up</b>.
+                Your secret stays on the HomeDash server (or in the desktop app’s data), never in your synced dashboard.
+              </p>
+              <p className="gt-hint faint">
+                <b>Trouble?</b> “Didn’t accept” usually means a typo, or that you clicked New Secret again (that replaces the old one) — paste the latest.
+                Can’t register? Two-factor isn’t on yet. “No data found” means players haven’t logged times for that game yet: type them in or ask the assistant.
+              </p>
+            </details>
             <form className="gt-form" onSubmit={(e) => submit(e, 'igdb', { igdb })}>
               <input className="input sm" value={igdb.clientId} onChange={(e) => setIgdb({ ...igdb, clientId: e.target.value })} placeholder="Client ID" aria-label="IGDB client ID" autoComplete="off" />
               <input className="input sm" type="password" value={igdb.clientSecret} onChange={(e) => setIgdb({ ...igdb, clientSecret: e.target.value })} placeholder="Client secret" aria-label="IGDB client secret" autoComplete="off" />

@@ -24,11 +24,13 @@ const TITLES = {
   move_kanban_card: 'Move kanban card', delete_kanban_card: 'Delete kanban card', list_notes: 'List notes',
   read_note: 'Read note', write_note: 'Write note', list_boosts: 'List Daily Boost entries',
   add_boosts: 'Add Daily Boost entries', remove_boost: 'Remove Daily Boost entry',
-  list_games: 'List tracked games', add_game: 'Add game', update_game: 'Update game', remove_game: 'Remove game', add_bookmark: 'Add bookmark', add_widget: 'Add widget',
+  list_games: 'List tracked games', add_game: 'Add game', update_game: 'Update game', remove_game: 'Remove game',
+  get_workout_setup: 'Workout setup and plans', set_workout_setup: 'Set workout equipment', save_workout_plan: 'Save workout plan',
+  generate_workout_plan: 'Generate workout plan', schedule_workout: 'Schedule workout', log_workout: 'Log workout', delete_workout_plan: 'Delete workout plan', add_bookmark: 'Add bookmark', add_widget: 'Add widget',
   remove_widget: 'Remove widget',
 }
 
-const INSTRUCTIONS = 'HomeDash is the user’s personal dashboard: calendar, tasks, habits, kanban boards, notebook, bookmarks, a Daily Boost of ADHD strategies and uplifting words, and a Game Tracker. ' +
+const INSTRUCTIONS = 'HomeDash is the user’s personal dashboard: calendar, tasks, habits, kanban boards, notebook, bookmarks, a Daily Boost of ADHD strategies and uplifting words, a Game Tracker and Workouts. ' +
   'Times are the user’s local wall-clock time as "YYYY-MM-DDTHH:mm" (or "YYYY-MM-DD"); call get_overview for the current date and time. ' +
   'Look items up with the list_* tools before changing them, and confirm with the user before deleting anything.'
 
