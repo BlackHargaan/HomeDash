@@ -1,11 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useDashboard } from '../context/DashboardContext.jsx'
 import { BUILTIN_TEMPLATES, instantiate } from '../lib/templates.js'
 import { widgetMeta } from '../widgets/registry.js'
 import Modal from './Modal.jsx'
 
 const BLANK = { id: 'blank', name: 'Blank', icon: '⬜', description: 'Start empty and add widgets yourself.', widgets: [] }
-const ICONS = ['🗂️', '💼', '🏠', '🖥️', '🎓', '📰', '✨', '🎯', '🧪', '🎮']
+const ICONS = ['🗂️', '🏠', '💼', '📅', '🖥️', '🎓', '📰', '✨', '🎯', '🧪', '🎮', '💪', '🌱', '🎵', '✈️', '💰', '🛒', '📚', '❤️', '⭐']
 
 // Miniature of a template's grid, scaled to the card.
 export function TemplatePreview({ template }) {
@@ -29,11 +29,22 @@ export default function TemplateModal({ mode = 'new', onClose, onDone = onClose 
   const { addBoard, applyTemplate, saveTemplate, deleteTemplate, userTemplates, widgets, boards, activeBoardId } = useDashboard()
   const [picked, setPicked] = useState(mode === 'new' ? 'blank' : 'productivity')
   const [name, setName] = useState('')
-  const [icon, setIcon] = useState('🗂️')
+  // The board's icon follows the picked template until you choose one yourself.
+  const [chosenIcon, setChosenIcon] = useState(null)
+  const [iconsOpen, setIconsOpen] = useState(false)
+  const iconRef = useRef(null)
   const [saved, setSaved] = useState(null)
   const all = [...(mode === 'new' ? [BLANK] : []), ...BUILTIN_TEMPLATES, ...userTemplates]
   const tpl = all.find((t) => t.id === picked) || all[0]
   const board = boards.find((b) => b.id === activeBoardId)
+  const icon = chosenIcon || (tpl.id === 'blank' ? '🗂️' : tpl.icon || '🗂️')
+
+  useEffect(() => {
+    if (!iconsOpen) return
+    const away = (e) => { if (!iconRef.current?.contains(e.target)) setIconsOpen(false) }
+    document.addEventListener('mousedown', away)
+    return () => document.removeEventListener('mousedown', away)
+  }, [iconsOpen])
 
   function confirmPick() {
     if (mode === 'new') {
@@ -71,13 +82,28 @@ export default function TemplateModal({ mode = 'new', onClose, onDone = onClose 
       )}
     >
       {mode === 'new' && (
-        <div className="row tpl-name-row">
-          <div className="tpl-icons">
-            {ICONS.map((i) => <button key={i} className={`chip ${icon === i ? 'on' : ''}`} onClick={() => setIcon(i)} aria-label={`Icon ${i}`}>{i}</button>)}
+        <>
+          <h3 className="tpl-h">Name &amp; icon</h3>
+          <div className="tpl-name-row">
+            <div className="tpl-icon-pick" ref={iconRef}>
+              <button type="button" className="tpl-icon-btn" onClick={() => setIconsOpen((o) => !o)}
+                aria-label={`Board icon: ${icon}. Change icon`} aria-expanded={iconsOpen} title="Change the board's icon">
+                <span>{icon}</span><span className="tpl-caret" aria-hidden="true">▾</span>
+              </button>
+              {iconsOpen && (
+                <div className="tpl-icon-pop" role="listbox" aria-label="Board icon">
+                  {ICONS.map((i) => (
+                    <button key={i} type="button" role="option" aria-selected={icon === i} className={icon === i ? 'on' : ''}
+                      onClick={() => { setChosenIcon(i); setIconsOpen(false) }} aria-label={`Use ${i}`}>{i}</button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <input className="input" placeholder={tpl.id === 'blank' ? 'Board name' : tpl.name} value={name} onChange={(e) => setName(e.target.value)} autoFocus aria-label="Board name"
+              onKeyDown={(e) => { if (e.key === 'Enter') confirmPick() }} />
           </div>
-          <input className="input" placeholder={tpl.id === 'blank' ? 'Board name' : tpl.name} value={name} onChange={(e) => setName(e.target.value)} autoFocus aria-label="Board name"
-            onKeyDown={(e) => { if (e.key === 'Enter') confirmPick() }} />
-        </div>
+          <h3 className="tpl-h">Start from a template</h3>
+        </>
       )}
       {saved && <p className="ok-msg">✓ Saved “{saved}”. It now appears in this list and when you create a board.</p>}
       <div className="tpl-grid">
