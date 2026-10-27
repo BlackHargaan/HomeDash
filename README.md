@@ -336,6 +336,14 @@ volumes:
 
 Deploy, then browse to `http://<host>:8080`. To update later, use Portainer's
 **Recreate** (with "Re-pull image") or add a watchtower/Portainer webhook.
+
+**Image tags.** `latest` follows `main`. Every release is also published as
+`:0.3.6` (that exact version), `:0.3` (newest 0.3.x) and `:v0.3.6`, so you can
+pin a version and upgrade when you choose — e.g.
+`image: ghcr.io/blackhargaan/homedash:0.3.6`. Every `main` build also has a
+`:sha-<commit>` tag. To (re)publish an older release's tags, run
+**Actions → Build and publish Docker image → Run workflow** with the tag (e.g.
+`v0.3.6`).
 If you keep the GHCR package private, add a registry in Portainer first
 (**Registries → Add → Custom**, `ghcr.io`, your GitHub username + a PAT with
 `read:packages`).
