@@ -423,15 +423,20 @@ textarea.input { resize: vertical; min-height: 60px; line-height: 1.5; }
 /* ============================================================
    Modal
    ============================================================ */
+/* Dialogs sit in the middle of the window. margin: auto centres them while
+   they fit and — unlike align-items: center — never pushes the top out of
+   reach when they don't; the dialog itself is capped to the window height
+   and scrolls inside. */
 .modal-scrim {
   position: fixed; inset: 0; z-index: 100;
   background: rgba(5, 8, 18, 0.55);
   backdrop-filter: blur(6px);
-  display: grid; place-items: center; padding: 20px;
+  display: flex; padding: 20px; overflow-y: auto; overscroll-behavior: contain;
   animation: fade 0.15s ease;
 }
 .modal {
-  width: min(560px, 100%); max-height: 88vh;
+  margin: auto;
+  width: min(560px, 100%); max-height: min(88vh, calc(100vh - 40px)); max-height: min(88dvh, calc(100dvh - 40px));
   display: flex; flex-direction: column;
   background: var(--card-solid);
   border: 1px solid var(--card-border);
@@ -441,11 +446,11 @@ textarea.input { resize: vertical; min-height: 60px; line-height: 1.5; }
   animation: pop 0.16s ease;
 }
 .modal.wide { width: min(760px, 100%); }
-.modal-head { display: flex; align-items: center; padding: 18px 20px; border-bottom: 1px solid var(--line); }
+.modal-head { display: flex; align-items: center; padding: 18px 20px; border-bottom: 1px solid var(--line); flex: none; }
 .modal-head h2 { margin: 0; font-size: 17px; }
 .modal-head .spacer { flex: 1; }
-.modal-body { padding: 20px; overflow: auto; }
-.modal-foot { padding: 14px 20px; border-top: 1px solid var(--line); display: flex; gap: 10px; justify-content: flex-end; }
+.modal-body { padding: 20px; overflow: auto; min-height: 0; flex: 1 1 auto; }
+.modal-foot { padding: 14px 20px; border-top: 1px solid var(--line); display: flex; gap: 10px; justify-content: flex-end; flex: none; }
 @keyframes fade { from { opacity: 0; } }
 @keyframes pop { from { opacity: 0; transform: translateY(8px) scale(0.98); } }
 
