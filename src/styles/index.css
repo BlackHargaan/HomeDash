@@ -423,15 +423,20 @@ textarea.input { resize: vertical; min-height: 60px; line-height: 1.5; }
 /* ============================================================
    Modal
    ============================================================ */
+/* Dialogs sit in the middle of the window. margin: auto centres them while
+   they fit and — unlike align-items: center — never pushes the top out of
+   reach when they don't; the dialog itself is capped to the window height
+   and scrolls inside. */
 .modal-scrim {
   position: fixed; inset: 0; z-index: 100;
   background: rgba(5, 8, 18, 0.55);
   backdrop-filter: blur(6px);
-  display: grid; place-items: center; padding: 20px;
+  display: flex; padding: 20px; overflow-y: auto; overscroll-behavior: contain;
   animation: fade 0.15s ease;
 }
 .modal {
-  width: min(560px, 100%); max-height: 88vh;
+  margin: auto;
+  width: min(560px, 100%); max-height: min(88vh, calc(100vh - 40px)); max-height: min(88dvh, calc(100dvh - 40px));
   display: flex; flex-direction: column;
   background: var(--card-solid);
   border: 1px solid var(--card-border);
@@ -441,11 +446,11 @@ textarea.input { resize: vertical; min-height: 60px; line-height: 1.5; }
   animation: pop 0.16s ease;
 }
 .modal.wide { width: min(760px, 100%); }
-.modal-head { display: flex; align-items: center; padding: 18px 20px; border-bottom: 1px solid var(--line); }
+.modal-head { display: flex; align-items: center; padding: 18px 20px; border-bottom: 1px solid var(--line); flex: none; }
 .modal-head h2 { margin: 0; font-size: 17px; }
 .modal-head .spacer { flex: 1; }
-.modal-body { padding: 20px; overflow: auto; }
-.modal-foot { padding: 14px 20px; border-top: 1px solid var(--line); display: flex; gap: 10px; justify-content: flex-end; }
+.modal-body { padding: 20px; overflow: auto; min-height: 0; flex: 1 1 auto; }
+.modal-foot { padding: 14px 20px; border-top: 1px solid var(--line); display: flex; gap: 10px; justify-content: flex-end; flex: none; }
 @keyframes fade { from { opacity: 0; } }
 @keyframes pop { from { opacity: 0; transform: translateY(8px) scale(0.98); } }
 
@@ -590,8 +595,24 @@ textarea.input { resize: vertical; min-height: 60px; line-height: 1.5; }
 .font-chip { font-size: 13px; }
 
 /* Board templates */
-.tpl-name-row { align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
-.tpl-icons { display: flex; flex-wrap: wrap; gap: 4px; flex: 0 0 auto !important; }
+.tpl-h { margin: 0 0 8px; font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); }
+.tpl-name-row { display: flex; align-items: center; gap: 8px; margin-bottom: 18px; }
+.tpl-name-row .input { flex: 1; min-width: 0; }
+.tpl-icon-pick { position: relative; flex: none; }
+.tpl-icon-btn {
+  display: flex; align-items: center; gap: 4px; height: 42px; padding: 0 10px; border-radius: 12px; cursor: pointer;
+  background: var(--input); border: 1px solid var(--card-border); color: var(--text); font: inherit; font-size: 20px;
+}
+.tpl-icon-btn:hover, .tpl-icon-btn[aria-expanded='true'] { border-color: var(--accent); }
+.tpl-caret { font-size: 10px; color: var(--text-faint); }
+.tpl-icon-pop {
+  position: absolute; top: calc(100% + 6px); left: 0; z-index: 5; width: 232px; padding: 6px;
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px;
+  background: var(--card-solid); border: 1px solid var(--card-border); border-radius: 12px; box-shadow: var(--shadow);
+}
+.tpl-icon-pop button { border: 0; background: none; font-size: 20px; line-height: 1; padding: 7px 0; border-radius: 8px; cursor: pointer; }
+.tpl-icon-pop button:hover { background: var(--card-hover, rgba(255, 255, 255, 0.07)); }
+.tpl-icon-pop button.on { background: color-mix(in srgb, var(--accent) 22%, transparent); }
 .tpl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
 .tpl-card {
   position: relative; text-align: left; padding: 10px; border-radius: 14px; cursor: pointer;
