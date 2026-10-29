@@ -21,8 +21,9 @@ fetching and homelab service checks. No accounts, no tracking.
   contents scale to their own width via CSS container queries.
 - **⌘K command palette** — switch boards, add widgets, quick-add a task, create
   an event from natural language, toggle theme, and more.
-- **Glassmorphism UI**, dark-first with a light theme, 6 accent colors and 4
-  wallpapers.
+- **Two styles** — **Glass** (frosted cards on a soft glow) or **Paper**
+  (editorial: paper & ink, serif headings, thin rules) — each in Dark, Light or
+  **Auto** (follows your system), with 7 accent colors and 4 wallpapers.
 - **Make it yours** (Settings → Appearance):
   - **Upload your own wallpaper** (or paste an image URL), with dim and blur
     sliders. Images are shrunk to ~1920px so they sync with everything else.

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useDashboard } from '../context/DashboardContext.jsx'
 import { ACCENTS } from '../widgets/registry.js'
+import { UI_STYLES, accentColor } from '../lib/appearance.js'
 import { exportAllData, importAllData } from '../lib/storage.js'
 import CloudSyncPanel from './CloudSyncPanel.jsx'
 import ServerPanel from './ServerPanel.jsx'
@@ -15,7 +16,7 @@ import AiPanel from './AiPanel.jsx'
 
 export default function SettingsModal({ onClose, section }) {
   const {
-    theme, setTheme, accent, setAccent,
+    theme, setTheme, resolvedTheme, uiStyle, setUiStyle, accent, setAccent,
     userName, setUserName, resetBoard,
   } = useDashboard()
   const fileRef = useRef(null)
@@ -67,10 +68,23 @@ export default function SettingsModal({ onClose, section }) {
       </div>
 
       <div className="field">
+        <label>Style</label>
+        <div className="style-picks">
+          {Object.entries(UI_STYLES).map(([id, st]) => (
+            <button key={id} type="button" className={`style-pick style-pick-${id} ${uiStyle === id ? 'on' : ''}`} aria-pressed={uiStyle === id} onClick={() => setUiStyle(id)}>
+              <span className="style-pick-swatch" aria-hidden="true"><i /><i /><i /></span>
+              <span className="style-pick-text"><b>{st.label}</b><span>{st.hint}</span></span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="field">
         <label>Theme</label>
         <div className="row">
           <button className={`chip ${theme === 'dark' ? 'on' : ''}`} onClick={() => setTheme('dark')}>🌙 Dark</button>
           <button className={`chip ${theme === 'light' ? 'on' : ''}`} onClick={() => setTheme('light')}>☀️ Light</button>
+          <button className={`chip ${theme === 'system' ? 'on' : ''}`} onClick={() => setTheme('system')} title="Follow your device's light/dark setting">◐ Auto</button>
         </div>
       </div>
 
@@ -81,7 +95,7 @@ export default function SettingsModal({ onClose, section }) {
             <button
               key={name}
               className={`swatch ${accent === name ? 'on' : ''}`}
-              style={{ background: color }}
+              style={{ background: accentColor(name, ACCENTS, uiStyle, resolvedTheme) || color }}
               onClick={() => setAccent(name)}
               aria-label={name}
             />
