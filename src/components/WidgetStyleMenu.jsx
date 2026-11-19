@@ -1,11 +1,13 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { ACCENTS } from '../widgets/registry.js'
-import { CARD_VARIANTS } from '../lib/appearance.js'
+import { CARD_VARIANTS, accentColor } from '../lib/appearance.js'
+import { useDashboard } from '../context/DashboardContext.jsx'
 
 // Per-widget look: accent color, card style, tint, and whether the title bar
 // shows outside edit mode. Rendered in a portal so small widgets don't clip it.
 export default function WidgetStyleMenu({ anchor, style = {}, onChange, onClose }) {
+  const { uiStyle, resolvedTheme } = useDashboard()
   const ref = useRef(null)
   const [pos, setPos] = useState({ top: 0, left: 0 })
 
@@ -37,7 +39,7 @@ export default function WidgetStyleMenu({ anchor, style = {}, onChange, onClose 
       <div className="swatches">
         <button className={`swatch auto ${!style.accent ? 'on' : ''}`} onClick={() => set({ accent: undefined })} aria-label="Board accent" title="Use the board accent" />
         {Object.entries(ACCENTS).map(([name, color]) => (
-          <button key={name} className={`swatch ${style.accent === name ? 'on' : ''}`} style={{ background: color }} onClick={() => set({ accent: name })} aria-label={name} />
+          <button key={name} className={`swatch ${style.accent === name ? 'on' : ''}`} style={{ background: accentColor(name, ACCENTS, uiStyle, resolvedTheme) || color }} onClick={() => set({ accent: name })} aria-label={name} />
         ))}
       </div>
       <label>Card</label>

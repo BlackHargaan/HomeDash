@@ -49,9 +49,14 @@ export default function CommandPalette({ onClose, onAddWidget, onSettings, onAsk
         }),
       },
       {
-        id: 'toggle-theme', icon: dash.theme === 'dark' ? '☀️' : '🌙',
-        label: `Switch to ${dash.theme === 'dark' ? 'light' : 'dark'} theme`, hint: 'Appearance',
-        run: () => { dash.setTheme(dash.theme === 'dark' ? 'light' : 'dark'); onClose() },
+        id: 'toggle-theme', icon: dash.resolvedTheme === 'dark' ? '☀️' : '🌙',
+        label: `Switch to ${dash.resolvedTheme === 'dark' ? 'light' : 'dark'} theme`, hint: 'Appearance',
+        run: () => { dash.setTheme(dash.resolvedTheme === 'dark' ? 'light' : 'dark'); onClose() },
+      },
+      {
+        id: 'toggle-style', icon: '📰',
+        label: `Switch to the ${dash.uiStyle === 'paper' ? 'Glass' : 'Paper'} style`, hint: 'Appearance',
+        run: () => { dash.setUiStyle(dash.uiStyle === 'paper' ? 'glass' : 'paper'); onClose() },
       },
       {
         id: 'toggle-edit', icon: '✎', label: dash.editMode ? 'Done editing layout' : 'Edit layout', hint: 'Rearrange widgets',

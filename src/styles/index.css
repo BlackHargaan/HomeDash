@@ -6,6 +6,7 @@
 :root {
   --accent: #8b93ff;
   --accent-soft: color-mix(in srgb, var(--accent) 22%, transparent);
+  --on-accent: #0b0f1a; /* text on an accent-colored fill */
   --radius: 20px;
   --radius-sm: 12px;
   --gap: 16px;
@@ -187,7 +188,7 @@ body { background: var(--bg); }
   transition: filter 0.15s, transform 0.08s;
 }
 .tb-pill:active { transform: translateY(1px); }
-.tb-pill.primary { background: var(--accent); color: #0b0f1a; box-shadow: 0 6px 18px -8px var(--accent); }
+.tb-pill.primary { background: var(--accent); color: var(--on-accent); box-shadow: 0 6px 18px -8px var(--accent); }
 .tb-pill.primary:hover { filter: brightness(1.08); }
 .tb-pill.accent { color: var(--accent); background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 45%, transparent); margin-right: 4px; }
 
@@ -211,7 +212,7 @@ body { background: var(--bg); }
 .btn:active { transform: translateY(1px); }
 .btn.primary {
   background: var(--accent);
-  color: #0b0f1a;
+  color: var(--on-accent);
   border-color: transparent;
 }
 .btn.primary:hover { filter: brightness(1.08); background: var(--accent); }
@@ -582,6 +583,25 @@ textarea.input { resize: vertical; min-height: 60px; line-height: 1.5; }
 .wstyle-pop label { font-size: 11px; color: var(--text-faint); font-weight: 600; }
 .wstyle-pop .chips { display: flex; flex-wrap: wrap; gap: 4px; }
 .swatch.auto { background: conic-gradient(#8b93ff, #b98bff, #5ad4e6, #4fd1a5, #f6c667, #ff8fab, #8b93ff); }
+
+/* Settings → Style picker: a tiny swatch of each look */
+.style-picks { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; }
+.style-pick {
+  display: flex; align-items: center; gap: 12px; padding: 10px 12px; text-align: left; cursor: pointer;
+  background: var(--input); border: 1px solid var(--card-border); border-radius: var(--radius-sm); color: var(--text); font: inherit;
+}
+.style-pick:hover { border-color: color-mix(in srgb, var(--accent) 50%, var(--card-border)); }
+.style-pick.on { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+.style-pick-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.style-pick-text b { font-size: 13px; }
+.style-pick-text span { font-size: 11.5px; color: var(--text-dim); line-height: 1.35; }
+.style-pick-swatch { flex: 0 0 auto; width: 46px; height: 38px; border-radius: 8px; padding: 5px; display: grid; grid-template-columns: 1fr 1fr; gap: 3px; }
+.style-pick-swatch i { border-radius: 3px; }
+.style-pick-swatch i:first-child { grid-column: span 2; }
+.style-pick-glass .style-pick-swatch { background: radial-gradient(120% 90% at 20% 0%, #3a3f8a, #0b0f1a); }
+.style-pick-glass .style-pick-swatch i { background: rgba(255, 255, 255, 0.16); border: 1px solid rgba(255, 255, 255, 0.22); }
+.style-pick-paper .style-pick-swatch { background: #f3eee4; border: 1px solid #c9bfb1; border-radius: 3px; }
+.style-pick-paper .style-pick-swatch i { background: none; border-radius: 0; border-top: 2px solid #1e1a16; }
 
 /* Appearance settings */
 .wp-preview {

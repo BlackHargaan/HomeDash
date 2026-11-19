@@ -2,7 +2,7 @@ import { createContext, useContext, useCallback, useEffect, useMemo, useState } 
 import { usePersistentState, readStore, writeStore, uid } from '../lib/storage.js'
 import { WIDGET_TYPES, widgetMeta } from '../widgets/registry.js'
 import { DEFAULT_CALENDARS } from '../widgets/calendar/helpers.js'
-import { fontStack } from '../lib/appearance.js'
+import { fontStack, PAPER_FONTS, resolveTheme } from '../lib/appearance.js'
 import { instantiate, templateById, templateFromWidgets } from '../lib/templates.js'
 
 const DashboardContext = createContext(null)
@@ -28,7 +28,10 @@ function defaultWidgets() {
 }
 
 export function DashboardProvider({ children }) {
-  const [theme, setTheme] = usePersistentState('theme', 'dark')
+  const [theme, setTheme] = usePersistentState('theme', 'dark') // 'dark' | 'light' | 'system'
+  const [uiStyle, setUiStyle] = usePersistentState('uiStyle', 'glass') // 'glass' | 'paper'
+  const [prefersDark, setPrefersDark] = useState(() => typeof matchMedia === 'function' && matchMedia('(prefers-color-scheme: dark)').matches)
+  const resolvedTheme = resolveTheme(theme, prefersDark)
   const [accent, setAccent] = usePersistentState('accent', 'indigo')
   const [wallpaper, setWallpaper] = usePersistentState('wallpaper', 'aurora')
   const [userName, setUserName] = usePersistentState('userName', '')
@@ -68,14 +71,29 @@ export function DashboardProvider({ children }) {
   const [habits, setHabits] = usePersistentState('habits', [])
   const [pomoStats, setPomoStats] = usePersistentState('pomoStats', { sessions: 0, focusMinutes: 0, byDay: {} })
 
+  // Follow the OS light/dark setting while the theme is "system".
+  useEffect(() => {
+    if (theme !== 'system' || typeof matchMedia !== 'function') return
+    const mq = matchMedia('(prefers-color-scheme: dark)')
+    const onChange = (e) => setPrefersDark(e.matches)
+    setPrefersDark(mq.matches)
+    mq.addEventListener?.('change', onChange)
+    return () => mq.removeEventListener?.('change', onChange)
+  }, [theme])
+
   useEffect(() => {
     const root = document.documentElement
-    root.dataset.theme = theme
+    root.dataset.theme = resolvedTheme
+    root.dataset.style = uiStyle
     root.dataset.accent = accent
     root.dataset.wallpaper = wallpaper === 'image' && !wallpaperImage ? 'aurora' : wallpaper
     root.dataset.density = density
-    root.style.setProperty('--font', fontStack(font))
-  }, [theme, accent, wallpaper, wallpaperImage, density, font])
+    // Paper brings its own typeface unless another font was picked.
+    root.style.setProperty('--font', uiStyle === 'paper' && font === 'default' ? PAPER_FONTS.sans : fontStack(font))
+    // Browser / phone chrome matches the page background.
+    const meta = document.querySelector('meta[name="theme-color"]')
+    if (meta) meta.setAttribute('content', getComputedStyle(root).getPropertyValue('--bg').trim() || '#0b0f1a')
+  }, [resolvedTheme, uiStyle, accent, wallpaper, wallpaperImage, density, font])
 
   // Let the server (MCP, push) know the user's time zone.
   useEffect(() => {
@@ -200,7 +218,8 @@ export function DashboardProvider({ children }) {
   )
 
   const value = {
-    theme, setTheme,
+    theme, setTheme, resolvedTheme,
+    uiStyle, setUiStyle,
     accent, setAccent,
     wallpaper, setWallpaper,
     userName, setUserName,

@@ -208,6 +208,7 @@ export const ACCENTS = {
   emerald: '#4fd1a5',
   amber: '#f6c667',
   rose: '#ff8fab',
+  clay: '#e8845a',
 }
 
 export const EVENT_COLORS = ['indigo', 'violet', 'cyan', 'emerald', 'amber', 'rose']

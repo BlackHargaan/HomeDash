@@ -18,6 +18,9 @@
   },
   "devDependencies": {
     "@floating-ui/dom": "^1.8.0",
+    "@fontsource/ibm-plex-mono": "5.2.6",
+    "@fontsource/ibm-plex-sans": "5.2.6",
+    "@fontsource/newsreader": "5.2.6",
     "@tiptap/extension-task-item": "^3.31.4",
     "@tiptap/extension-task-list": "^3.31.4",
     "@tiptap/extensions": "^3.31.4",

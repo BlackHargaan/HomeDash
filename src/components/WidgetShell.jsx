@@ -2,11 +2,12 @@ import { useCallback, useRef, useState } from 'react'
 import { useDashboard } from '../context/DashboardContext.jsx'
 import { widgetMeta, ACCENTS } from '../widgets/registry.js'
 import WidgetStyleMenu from './WidgetStyleMenu.jsx'
+import { accentColor } from '../lib/appearance.js'
 
 // Chrome around every widget: glass card, drag handle, title and edit tools.
 // `title` / `icon` can be overridden per instance (e.g. a named Notes widget).
 export default function WidgetShell({ widget, children, title, icon, actions }) {
-  const { editMode, removeWidget, updateWidget } = useDashboard()
+  const { editMode, removeWidget, updateWidget, uiStyle, resolvedTheme } = useDashboard()
   const meta = widgetMeta(widget.type)
   const displayTitle = title || widget.settings?.title || meta?.name || 'Widget'
   const displayIcon = icon || meta?.icon || '▫️'
@@ -14,7 +15,7 @@ export default function WidgetShell({ widget, children, title, icon, actions }) 
   const styleBtn = useRef(null)
   const [styling, setStyling] = useState(false)
   const closeStyling = useCallback(() => setStyling(false), [])
-  const accent = ACCENTS[style.accent]
+  const accent = style.accent ? accentColor(style.accent, ACCENTS, uiStyle, resolvedTheme) : null
   const cssVars = accent ? { '--accent': accent, '--accent-soft': `color-mix(in srgb, ${accent} 22%, transparent)` } : undefined
 
   function rename() {
